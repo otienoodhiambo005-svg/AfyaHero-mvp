@@ -1,0 +1,1156 @@
+openapi: 3.0.3
+info:
+  title: AfyaHero FHIR API
+  description: |
+    Healthcare platform API with FHIR interoperability.
+    
+    ## Authentication
+    All endpoints require a valid Bearer token obtained through Supabase authentication.
+    
+    ## Rate Limiting
+    API calls are rate limited based on user role and endpoint type.
+  version: 1.0.0
+  contact:
+    name: AfyaHero Support
+    email: support@afyahero.com
+
+servers:
+  - url: https://api.afyahero.com
+    description: Production server
+  - url: https://staging.api.afyahero.com
+    description: Staging server
+  - url: http://localhost:3000
+    description: Local development
+
+tags:
+  - name: Health Checks
+    description: Kubernetes probe endpoints
+  - name: FHIR
+    description: FHIR R4 compliant healthcare resources
+  - name: AI
+    description: AI-powered clinical assistance
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Apps Auth
+    description: App-facing authentication endpoints
+  - name: Apps Patient
+    description: Patient app endpoints
+  - name: Apps CHP
+    description: Community health provider app endpoints
+  - name: Apps Shared
+    description: Shared app endpoints
+
+paths:
+  /api/health/live:
+    get:
+      tags:
+        - Health Checks
+      summary: Liveness probe
+      description: Kubernetes liveness probe - checks if the pod is running
+      responses:
+        '200':
+          description: Pod is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+        '503':
+          description: Pod is unhealthy
+
+  /api/health/ready:
+    get:
+      tags:
+        - Health Checks
+      summary: Readiness probe
+      description: Kubernetes readiness probe - checks if the pod can receive traffic
+      responses:
+        '200':
+          description: Pod is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+        '503':
+          description: Pod is not ready
+
+  /api/health/startup:
+    get:
+      tags:
+        - Health Checks
+      summary: Startup probe
+      description: Kubernetes startup probe - checks if the pod has finished initializing
+      responses:
+        '200':
+          description: Application has started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+        '503':
+          description: Application is still starting
+
+  /api/health/deep:
+    get:
+      tags:
+        - Health Checks
+      summary: Deep health check
+      description: Comprehensive system status for monitoring dashboards
+      responses:
+        '200':
+          description: System is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeepHealthStatus'
+        '503':
+          description: System is degraded or unhealthy
+
+  /api/fhir/metadata:
+    get:
+      tags:
+        - FHIR
+      summary: FHIR Capability Statement
+      description: Returns the FHIR R4 capability statement for this server
+      responses:
+        '200':
+          description: Capability statement
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/CapabilityStatement'
+
+  /api/fhir/Patient:
+    get:
+      tags:
+        - FHIR
+      summary: Search Patients
+      description: Search for patients by various criteria
+      parameters:
+        - name: _id
+          in: query
+          schema:
+            type: string
+          description: Search by patient ID
+        - name: name
+          in: query
+          schema:
+            type: string
+          description: Search by patient name
+        - name: gender
+          in: query
+          schema:
+            type: string
+            enum: [male, female]
+          description: Filter by gender
+        - name: birthdate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filter by birth date
+        - name: _count
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+          description: Number of results to return
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/FHIRBundle'
+        '401':
+          description: Unauthorized
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/OperationOutcome'
+    post:
+      tags:
+        - FHIR
+      summary: Create Patient
+      description: Create a new patient resource
+      requestBody:
+        required: true
+        content:
+          application/fhir+json:
+            schema:
+              $ref: '#/components/schemas/FHIRPatient'
+      responses:
+        '201':
+          description: Patient created
+          headers:
+            Location:
+              schema:
+                type: string
+              description: URL of the created resource
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/FHIRPatient'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+
+  /api/fhir/Patient/{id}:
+    get:
+      tags:
+        - FHIR
+      summary: Get Patient by ID
+      description: Retrieve a specific patient by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Patient ID
+      responses:
+        '200':
+          description: Patient found
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/FHIRPatient'
+        '404':
+          description: Patient not found
+        '401':
+          description: Unauthorized
+    put:
+      tags:
+        - FHIR
+      summary: Update Patient
+      description: Update an existing patient resource
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Patient ID
+      requestBody:
+        required: true
+        content:
+          application/fhir+json:
+            schema:
+              $ref: '#/components/schemas/FHIRPatient'
+      responses:
+        '200':
+          description: Patient updated
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/OperationOutcome'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Patient not found
+
+  /api/fhir/Observation:
+    get:
+      tags:
+        - FHIR
+      summary: Search Observations
+      description: Search for observations (vitals, lab results)
+      parameters:
+        - name: _id
+          in: query
+          schema:
+            type: string
+          description: Search by observation ID
+        - name: subject
+          in: query
+          schema:
+            type: string
+          description: Filter by patient (Patient/{id})
+        - name: _count
+          in: query
+          schema:
+            type: integer
+          description: Number of results to return
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/FHIRBundle'
+        '401':
+          description: Unauthorized
+    post:
+      tags:
+        - FHIR
+      summary: Create Observation
+      description: Create a new observation (vitals, lab result)
+      requestBody:
+        required: true
+        content:
+          application/fhir+json:
+            schema:
+              $ref: '#/components/schemas/FHIRObservation'
+      responses:
+        '201':
+          description: Observation created
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/FHIRObservation'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+
+  /api/fhir/Practitioner:
+    get:
+      tags:
+        - FHIR
+      summary: Search Practitioners
+      description: Search for practitioners by name or ID
+      parameters:
+        - name: _id
+          in: query
+          schema:
+            type: string
+          description: Search by practitioner ID
+        - name: name
+          in: query
+          schema:
+            type: string
+          description: Search by practitioner name
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/FHIRBundle'
+        '401':
+          description: Unauthorized
+    post:
+      tags:
+        - FHIR
+      summary: Create Practitioner
+      description: Create a new practitioner resource
+      requestBody:
+        required: true
+        content:
+          application/fhir+json:
+            schema:
+              $ref: '#/components/schemas/FHIRPractitioner'
+      responses:
+        '201':
+          description: Practitioner created
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/FHIRPractitioner'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+
+  /api/fhir/Organization:
+    get:
+      tags:
+        - FHIR
+      summary: Search Organizations
+      description: Search for organizations (hospitals, clinics)
+      parameters:
+        - name: _id
+          in: query
+          schema:
+            type: string
+          description: Search by organization ID
+        - name: name
+          in: query
+          schema:
+            type: string
+          description: Search by organization name
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/FHIRBundle'
+        '401':
+          description: Unauthorized
+    post:
+      tags:
+        - FHIR
+      summary: Create Organization
+      description: Create a new organization resource
+      requestBody:
+        required: true
+        content:
+          application/fhir+json:
+            schema:
+              $ref: '#/components/schemas/FHIROrganization'
+      responses:
+        '201':
+          description: Organization created
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/FHIROrganization'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+
+  /api/ai/dawa:
+    post:
+      tags:
+        - AI
+      summary: DAWA AI Assistant
+      description: |
+        Role-aware, context-enriched AI queries for clinical workflow assistance.
+        
+        DAWA provides workflow guidance only and cannot give clinical diagnosis or treatment advice.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - query
+              properties:
+                query:
+                  type: string
+                  minLength: 5
+                  maxLength: 2000
+                  description: Free-text query
+                patientId:
+                  type: string
+                  format: uuid
+                  description: Optional patient context
+                personaId:
+                  type: string
+                  enum: [DAWA-Clinical, DAWA-Ward, DAWA-Rx, DAWA-Lab, DAWA-Ops]
+                  description: Optional persona override
+                refreshCache:
+                  type: boolean
+                  default: false
+                  description: Force cache refresh
+      responses:
+        '200':
+          description: AI response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DAWAResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Access denied to requested persona
+        '503':
+          description: AI service unavailable
+
+  /api/apps/auth/issue:
+    post:
+      tags:
+        - Apps Auth
+      summary: Issue app access token
+      description: Issues an app bearer token after validating developer signed headers.
+      security:
+        - DeveloperSignedHeaderAuth: []
+      responses:
+        '200':
+          description: App token issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppAuthTokenResponse'
+        '400':
+          $ref: '#/components/responses/AppBadRequest'
+        '401':
+          $ref: '#/components/responses/AppUnauthorized'
+        '403':
+          $ref: '#/components/responses/AppForbidden'
+        '429':
+          $ref: '#/components/responses/AppRateLimited'
+
+  /api/apps/auth/refresh:
+    post:
+      tags:
+        - Apps Auth
+      summary: Refresh app access token
+      description: Refreshes an existing app bearer token.
+      security:
+        - AppBearerAuth: []
+      responses:
+        '200':
+          description: App token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppAuthTokenResponse'
+        '400':
+          $ref: '#/components/responses/AppBadRequest'
+        '401':
+          $ref: '#/components/responses/AppUnauthorized'
+        '403':
+          $ref: '#/components/responses/AppForbidden'
+        '429':
+          $ref: '#/components/responses/AppRateLimited'
+
+  /api/apps/auth/introspect:
+    post:
+      tags:
+        - Apps Auth
+      summary: Introspect app token
+      description: Returns status and claims for an app bearer token.
+      security:
+        - AppBearerAuth: []
+      responses:
+        '200':
+          description: Token introspection result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppTokenIntrospectionResponse'
+        '400':
+          $ref: '#/components/responses/AppBadRequest'
+        '401':
+          $ref: '#/components/responses/AppUnauthorized'
+        '403':
+          $ref: '#/components/responses/AppForbidden'
+        '429':
+          $ref: '#/components/responses/AppRateLimited'
+
+  /api/apps/patient/me:
+    get:
+      tags:
+        - Apps Patient
+      summary: Get current patient profile
+      description: Returns profile data for the authenticated app patient.
+      security:
+        - AppBearerAuth: []
+      responses:
+        '200':
+          description: Patient profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppPatientProfileResponse'
+        '400':
+          $ref: '#/components/responses/AppBadRequest'
+        '401':
+          $ref: '#/components/responses/AppUnauthorized'
+        '403':
+          $ref: '#/components/responses/AppForbidden'
+        '429':
+          $ref: '#/components/responses/AppRateLimited'
+
+  /api/apps/patient/appointments:
+    get:
+      tags:
+        - Apps Patient
+      summary: List patient appointments
+      description: Returns appointments for the authenticated app patient.
+      security:
+        - AppBearerAuth: []
+      responses:
+        '200':
+          description: Appointment list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppAppointmentsResponse'
+        '400':
+          $ref: '#/components/responses/AppBadRequest'
+        '401':
+          $ref: '#/components/responses/AppUnauthorized'
+        '403':
+          $ref: '#/components/responses/AppForbidden'
+        '429':
+          $ref: '#/components/responses/AppRateLimited'
+
+  /api/apps/chp/patients:
+    get:
+      tags:
+        - Apps CHP
+      summary: List CHP patients
+      description: Returns patients assigned to the authenticated CHP user.
+      security:
+        - AppBearerAuth: []
+      responses:
+        '200':
+          description: CHP patient list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppCHPPatientsResponse'
+        '400':
+          $ref: '#/components/responses/AppBadRequest'
+        '401':
+          $ref: '#/components/responses/AppUnauthorized'
+        '403':
+          $ref: '#/components/responses/AppForbidden'
+        '429':
+          $ref: '#/components/responses/AppRateLimited'
+
+  /api/apps/chp/visit-notes:
+    get:
+      tags:
+        - Apps CHP
+      summary: List CHP visit notes
+      description: Returns visit notes for CHP workflows.
+      security:
+        - AppBearerAuth: []
+      responses:
+        '200':
+          description: Visit note list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppVisitNotesResponse'
+        '400':
+          $ref: '#/components/responses/AppBadRequest'
+        '401':
+          $ref: '#/components/responses/AppUnauthorized'
+        '403':
+          $ref: '#/components/responses/AppForbidden'
+        '429':
+          $ref: '#/components/responses/AppRateLimited'
+
+  /api/apps/facilities:
+    get:
+      tags:
+        - Apps Shared
+      summary: List facilities
+      description: Returns facilities available to the authenticated app user.
+      security:
+        - AppBearerAuth: []
+      responses:
+        '200':
+          description: Facility list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppFacilitiesResponse'
+        '400':
+          $ref: '#/components/responses/AppBadRequest'
+        '401':
+          $ref: '#/components/responses/AppUnauthorized'
+        '403':
+          $ref: '#/components/responses/AppForbidden'
+        '429':
+          $ref: '#/components/responses/AppRateLimited'
+
+  /api/apps/medications:
+    get:
+      tags:
+        - Apps Shared
+      summary: List medications
+      description: Returns medications visible to the authenticated app user.
+      security:
+        - AppBearerAuth: []
+      responses:
+        '200':
+          description: Medication list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppMedicationsResponse'
+        '400':
+          $ref: '#/components/responses/AppBadRequest'
+        '401':
+          $ref: '#/components/responses/AppUnauthorized'
+        '403':
+          $ref: '#/components/responses/AppForbidden'
+        '429':
+          $ref: '#/components/responses/AppRateLimited'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Supabase JWT token
+    DeveloperSignedHeaderAuth:
+      type: apiKey
+      in: header
+      name: X-Developer-Signature
+      description: Developer signature header used for app token issuance.
+    AppBearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: App access token for /api/apps endpoints.
+
+  responses:
+    AppBadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AppErrorResponse'
+    AppUnauthorized:
+      description: Authentication failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AppErrorResponse'
+    AppForbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AppErrorResponse'
+    AppRateLimited:
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AppErrorResponse'
+
+  schemas:
+    AppErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: string
+      required:
+        - error
+        - message
+
+    AppAuthTokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+          example: Bearer
+        expiresIn:
+          type: integer
+      required:
+        - accessToken
+        - tokenType
+
+    AppTokenIntrospectionResponse:
+      type: object
+      properties:
+        active:
+          type: boolean
+        subject:
+          type: string
+        scope:
+          type: string
+        exp:
+          type: integer
+      required:
+        - active
+
+    AppPatientProfileResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        fullName:
+          type: string
+        phoneNumber:
+          type: string
+        facilityId:
+          type: string
+      required:
+        - id
+        - fullName
+
+    AppAppointmentsResponse:
+      type: object
+      properties:
+        appointments:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              scheduledAt:
+                type: string
+                format: date-time
+              status:
+                type: string
+              facilityId:
+                type: string
+            required:
+              - id
+              - scheduledAt
+              - status
+      required:
+        - appointments
+
+    AppCHPPatientsResponse:
+      type: object
+      properties:
+        patients:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              fullName:
+                type: string
+              riskLevel:
+                type: string
+            required:
+              - id
+              - fullName
+      required:
+        - patients
+
+    AppVisitNotesResponse:
+      type: object
+      properties:
+        notes:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              patientId:
+                type: string
+              createdAt:
+                type: string
+                format: date-time
+              note:
+                type: string
+            required:
+              - id
+              - patientId
+              - createdAt
+      required:
+        - notes
+
+    AppFacilitiesResponse:
+      type: object
+      properties:
+        facilities:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              county:
+                type: string
+            required:
+              - id
+              - name
+      required:
+        - facilities
+
+    AppMedicationsResponse:
+      type: object
+      properties:
+        medications:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              dosageForm:
+                type: string
+            required:
+              - id
+              - name
+      required:
+        - medications
+
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy, degraded]
+        timestamp:
+          type: string
+          format: date-time
+        uptime:
+          type: number
+          description: Process uptime in seconds
+
+    DeepHealthStatus:
+      allOf:
+        - $ref: '#/components/schemas/HealthStatus'
+        - type: object
+          properties:
+            checks:
+              type: object
+              properties:
+                system:
+                  type: object
+                  properties:
+                    nodeVersion:
+                      type: string
+                    platform:
+                      type: string
+                    architecture:
+                      type: string
+                    memoryUsage:
+                      type: object
+                database:
+                  type: string
+                  enum: [healthy, unhealthy]
+                redis:
+                  type: string
+                  enum: [healthy, unhealthy, degraded]
+                authentication:
+                  type: string
+                  enum: [healthy, unhealthy]
+                fhir:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                    version:
+                      type: string
+
+    CapabilityStatement:
+      type: object
+      properties:
+        resourceType:
+          type: string
+          enum: [CapabilityStatement]
+        status:
+          type: string
+          enum: [draft, active, retired, unknown]
+        fhirVersion:
+          type: string
+          enum: [4.0.1]
+        rest:
+          type: array
+          items:
+            type: object
+
+    FHIRBundle:
+      type: object
+      properties:
+        resourceType:
+          type: string
+          enum: [Bundle]
+        type:
+          type: string
+          enum: [searchset, collection]
+        total:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+        entry:
+          type: array
+          items:
+            type: object
+            properties:
+              resource:
+                type: object
+              fullUrl:
+                type: string
+
+    OperationOutcome:
+      type: object
+      properties:
+        resourceType:
+          type: string
+          enum: [OperationOutcome]
+        issue:
+          type: array
+          items:
+            type: object
+            properties:
+              severity:
+                type: string
+                enum: [fatal, error, warning, information]
+              code:
+                type: string
+              details:
+                type: object
+                properties:
+                  text:
+                    type: string
+
+    FHIRPatient:
+      type: object
+      properties:
+        resourceType:
+          type: string
+          enum: [Patient]
+        id:
+          type: string
+        identifier:
+          type: array
+          items:
+            type: object
+        active:
+          type: boolean
+        name:
+          type: array
+          items:
+            type: object
+            properties:
+              use:
+                type: string
+              given:
+                type: array
+                items:
+                  type: string
+              family:
+                type: string
+        gender:
+          type: string
+          enum: [male, female, other, unknown]
+        birthDate:
+          type: string
+          format: date
+        telecom:
+          type: array
+          items:
+            type: object
+
+    FHIRObservation:
+      type: object
+      properties:
+        resourceType:
+          type: string
+          enum: [Observation]
+        id:
+          type: string
+        status:
+          type: string
+          enum: [registered, preliminary, final, amended, corrected, cancelled, entered-in-error, unknown]
+        category:
+          type: array
+          items:
+            type: object
+        code:
+          type: object
+          properties:
+            coding:
+              type: array
+              items:
+                type: object
+        subject:
+          type: object
+          properties:
+            reference:
+              type: string
+        effectiveDateTime:
+          type: string
+          format: date-time
+        valueQuantity:
+          type: object
+          properties:
+            value:
+              type: number
+            unit:
+              type: string
+            system:
+              type: string
+
+    FHIRPractitioner:
+      type: object
+      properties:
+        resourceType:
+          type: string
+          enum: [Practitioner]
+        id:
+          type: string
+        identifier:
+          type: array
+          items:
+            type: object
+        active:
+          type: boolean
+        name:
+          type: array
+          items:
+            type: object
+        telecom:
+          type: array
+          items:
+            type: object
+        qualification:
+          type: array
+          items:
+            type: object
+
+    FHIROrganization:
+      type: object
+      properties:
+        resourceType:
+          type: string
+          enum: [Organization]
+        id:
+          type: string
+        identifier:
+          type: array
+          items:
+            type: object
+        active:
+          type: boolean
+        type:
+          type: array
+          items:
+            type: object
+        name:
+          type: string
+        telecom:
+          type: array
+          items:
+            type: object
+
+    DAWAResponse:
+      type: object
+      properties:
+        answer:
+          type: string
+          description: AI-generated response text
+        persona:
+          type: string
+          description: Resolved persona ID
+        provider:
+          type: string
+          description: AI provider that answered
+        model:
+          type: string
+          description: Model identifier
+        latencyMs:
+          type: integer
+          description: End-to-end latency in milliseconds
+        sessionId:
+          type: string
+          description: DAWA session ID for history
+        citations:
+          type: array
+          items:
+            type: object
+          description: Reference citations
+        cached:
+          type: boolean
+          description: Whether the response was served from cache
+
+security:
+  - BearerAuth: []

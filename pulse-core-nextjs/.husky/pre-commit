@@ -1,0 +1,38 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit checks..."
+
+# Run Prettier check
+echo "Running Prettier..."
+npx prettier --check "**/*.{js,jsx,ts,tsx,json,md}"
+if [ $? -ne 0 ]; then
+  echo "❌ Prettier check failed. Run 'npm run format:fix' to auto-format."
+  exit 1
+fi
+
+# Run ESLint
+echo "Running ESLint..."
+npx eslint . --ext .js,.jsx,.ts,.tsx --max-warnings=0
+if [ $? -ne 0 ]; then
+  echo "❌ ESLint failed. Please fix the linting errors before committing."
+  exit 1
+fi
+
+# Run TypeScript type check
+echo "Running TypeScript type check..."
+npx tsc --noEmit
+if [ $? -ne 0 ]; then
+  echo "❌ TypeScript type check failed. Please fix the type errors before committing."
+  exit 1
+fi
+
+# Run tests
+echo "Running tests..."
+npm test -- --passWithNoTests
+if [ $? -ne 0 ]; then
+  echo "❌ Tests failed. Please fix the failing tests before committing."
+  exit 1
+fi
+
+echo "✅ All pre-commit checks passed!"

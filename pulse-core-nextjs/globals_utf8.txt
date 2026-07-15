@@ -1,0 +1,230 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Quera Font for AFYAHERO Logo */
+@font-face {
+    font-family: 'Quera';
+    src: url('/fonts/Quera-DEMO-BF68be80d1aceec.otf') format('opentype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+    /* Brand - MoH Kenya Aligned (High Legibility) */
+    --portal-primary: #0F766E;      /* Teal 700 - Hospital Native */
+    --portal-primary-hover: #0D9488;
+    --portal-primary-light: #CCFBF1;
+    --portal-glow: rgba(15, 118, 110, 0.2);
+
+    /* Clinical Semantic System - Universal Standard */
+    --severity-high: #DC2626;       /* Red 600 - Critical/Allergy */
+    --severity-high-bg: #FEE2E2;
+    --severity-medium: #D97706;     /* Amber 600 - Abnormal/Warning */
+    --severity-medium-bg: #FEF3C7;
+    --severity-low: #16A34A;        /* Green 600 - Normal/Safe */
+    --severity-low-bg: #DCFCE7;
+    
+    /* Global Semantic Roles */
+    --color-doctor: #1E40AF;        /* Blue 800 - Clinician */
+    --color-pharmacy: #059669;      /* Emerald 600 */
+    --color-lab: #C026D3;           /* Fuchsia 600 */
+
+    /* Fixed Sidebar & Shell (High Contrast) */
+    --sidebar-bg: #080F0C;
+    --sidebar-text: #FFFFFF;
+    --sidebar-accent: var(--portal-primary);
+    --sidebar-border: #1E293B;
+
+    /* Content Area (Optimized for Sunlight) - Sand & Ink Palette */
+    --content-bg: #F8FAFC;          /* Sand */
+    --content-surface: #FFFFFF;     /* Pure White */
+    --content-border: #E2E8F0;      /* Slate 200 */
+    --text-primary: #080F0C;        /* Ink - Deepest Charcoal */
+    --text-secondary: #64748B;      /* Slate 500 */
+    --glass-bg: rgba(255, 255, 255, 0.9);
+
+    /* Fonts (Kenya Clinical Standard) */
+    --sans: var(--font-sans);
+    --mono: var(--font-mono);
+    --serif: var(--font-serif);
+}
+
+/* Force Light Mode for Clinic Durability */
+@media (prefers-color-scheme: dark) {
+  :root { color-scheme: light; }
+}
+
+/* Facility Theme: Clinic (Emerald) */
+[data-facility-theme='clinic'] {
+    --portal-primary: #10B981;
+    --portal-primary-hover: #059669;
+    --portal-primary-light: rgba(16, 185, 129, 0.1);
+    --portal-glow: rgba(16, 185, 129, 0.4);
+    --sidebar-accent: #10B981;
+    --kpi-metric: #10B981;
+}
+
+/* Facility Theme: Lab (Violet) */
+[data-facility-theme='lab'] {
+    --portal-primary: #8B5CF6;
+    --portal-primary-hover: #7C3AED;
+    --portal-primary-light: rgba(139, 92, 246, 0.1);
+    --portal-glow: rgba(139, 92, 246, 0.4);
+    --sidebar-accent: #8B5CF6;
+    --kpi-metric: #8B5CF6;
+}
+
+/* Facility Theme: Pharmacy (Amber) */
+[data-facility-theme='pharmacy'] {
+    --portal-primary: #F59E0B;
+    --portal-primary-hover: #D97706;
+    --portal-primary-light: rgba(245, 158, 11, 0.1);
+    --portal-glow: rgba(245, 158, 11, 0.4);
+    --sidebar-accent: #F59E0B;
+    --kpi-metric: #F59E0B;
+}
+
+/* Content Mode: Dark */
+[data-content-mode='dark'] {
+    --content-bg: #080F0C;
+    --content-surface: #141D24;
+    --content-border: #1E293B;
+    --text-primary: #F8FAFC;
+    --text-secondary: #94A3B8;
+    --glass-bg: rgba(15, 23, 42, 0.8);
+}
+
+@layer base {
+    html {
+        font-size: 16px; /* MoH Kenya Minimum */
+    }
+
+    body {
+        background-color: var(--content-bg);
+        color: var(--text-primary);
+        font-family: var(--sans);
+        line-height: 1.5; /* Essential for clarity */
+        -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3 {
+        font-family: var(--sans);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--text-primary);
+    }
+
+    /* Tabular numbers for clinical data */
+    .tabular-nums {
+        font-variant-numeric: tabular-nums;
+    }
+
+    select option {
+        background-color: #ffffff;
+        color: #111827;
+    }
+}
+
+/* Indicators */
+.offline-indicator {
+    background-color: #fef2f2 !important;
+    color: #7f1d1d !important;
+    border: 1px solid #fecaca !important;
+}
+
+.online-indicator {
+    background-color: #f0fdf4 !important;
+    color: #166534 !important;
+    border: 1px solid #bbf7d0 !important;
+}
+
+.slow-indicator {
+    background-color: #fefce8 !important;
+    color: #713f12 !important;
+    border: 1px solid #fde047 !important;
+}
+
+/* Custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e1;
+}
+
+@layer components {
+    .solid-card {
+        background: var(--content-surface);
+        border: 1px solid var(--content-border);
+        box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.04);
+        @apply transition-all duration-300;
+    }
+
+    .solid-card:hover {
+        border-color: var(--portal-primary);
+        box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.08);
+    }
+    
+    .premium-button-primary {
+        background: var(--portal-primary);
+        color: white;
+        @apply rounded-full px-6 py-2.5 font-bold transition-all duration-500 active:scale-95;
+        box-shadow: 0 4px 14px 0 var(--portal-glow);
+    }
+
+    .premium-button-primary:hover {
+        background: var(--portal-primary-hover);
+        box-shadow: 0 8px 25px var(--portal-glow);
+        @apply -translate-y-0.5;
+    }
+}
+
+@layer utilities {
+    .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .text-balance {
+        text-wrap: balance;
+    }
+    
+    @keyframes pulse-glow {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(50,130,184,0.4); }
+        50% { box-shadow: 0 0 16px 6px rgba(50,130,184,0.2); }
+    }
+    
+    .pulse-glow {
+        animation: pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    .staggered-fade-in > * {
+        @apply opacity-0 translate-y-4;
+        animation: slide-up 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    }
+
+    @keyframes slide-up {
+        to { @apply opacity-100 translate-y-0; }
+    }
+
+    .hover-glow {
+        @apply transition-all duration-300;
+    }
+    
+    .hover-glow:hover {
+        box-shadow: 0 0 25px var(--portal-glow);
+        border-color: var(--portal-primary);
+    }
+}

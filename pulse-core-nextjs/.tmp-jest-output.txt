@@ -1,0 +1,359 @@
+
+> AfyaHero@0.1.0 test
+> jest --runInBand --verbose
+
+FAIL src/app/api/admin/bot/analytics/__tests__/analytics.test.ts
+  /api/admin/bot/analytics
+    GET
+      ΓêÜ should return analytics data successfully (9 ms)
+      ├ù should filter by date range when days parameter provided (5 ms)
+      ΓêÜ should use default 30 days when no parameter provided (1 ms)
+      ΓêÜ should handle database errors gracefully (1 ms)
+      ΓêÜ should return empty recent activity when no messages (3 ms)
+
+  ΓùÅ /api/admin/bot/analytics ΓÇ║ GET ΓÇ║ should filter by date range when days parameter provided
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: ObjectContaining {"where": ObjectContaining {"createdAt": Any<Object>}}
+
+    Number of calls: 0
+
+      64 |       const response = await GET(request);
+      65 |
+    > 66 |       expect(prisma.botMessage.count).toHaveBeenCalledWith(
+         |                                       ^
+      67 |         expect.objectContaining({
+      68 |           where: expect.objectContaining({
+      69 |             createdAt: expect.any(Object),
+
+      at Object.toHaveBeenCalledWith (src/app/api/admin/bot/analytics/__tests__/analytics.test.ts:66:39)
+
+FAIL src/app/api/bot/whatsapp/webhook/__tests__/webhook.test.ts
+  /api/bot/whatsapp/webhook
+    POST
+      ΓêÜ should process incoming WhatsApp message successfully (3 ms)
+      ΓêÜ should verify webhook signature (2 ms)
+      ├ù should return 401 for invalid signature (3 ms)
+      ΓêÜ should handle processing errors gracefully (2 ms)
+      ├ù should handle invalid JSON payload (3 ms)
+    GET
+      ΓêÜ should return active status for webhook verification (1 ms)
+
+  ΓùÅ /api/bot/whatsapp/webhook ΓÇ║ POST ΓÇ║ should return 401 for invalid signature
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 401
+    Received: 500
+
+      112 |       const data = await response.json();
+      113 |
+    > 114 |       expect(response.status).toBe(401);
+          |                               ^
+      115 |       expect(data.error).toBe('Invalid signature');
+      116 |     });
+      117 |
+
+      at Object.toBe (src/app/api/bot/whatsapp/webhook/__tests__/webhook.test.ts:114:31)
+
+  ΓùÅ /api/bot/whatsapp/webhook ΓÇ║ POST ΓÇ║ should handle invalid JSON payload
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 400
+    Received: 500
+
+      146 |       const response = await POST(request);
+      147 |
+    > 148 |       expect(response.status).toBe(400);
+          |                               ^
+      149 |     });
+      150 |   });
+      151 |
+
+      at Object.toBe (src/app/api/bot/whatsapp/webhook/__tests__/webhook.test.ts:148:31)
+
+FAIL src/app/api/bot/uussd/webhook/__tests__/webhook.test.ts
+  /api/bot/ussd/webhook
+    POST
+      ├ù should process USSD request successfully (6 ms)
+      ├ù should return correct response format (6 ms)
+      ├ù should set Freeflow header to false for closing responses (1 ms)
+      ΓêÜ should handle processing errors gracefully (3 ms)
+      ΓêÜ should handle missing form data (2 ms)
+    GET
+      ΓêÜ should return active status for webhook verification (2 ms)
+
+  ΓùÅ /api/bot/ussd/webhook ΓÇ║ POST ΓÇ║ should process USSD request successfully
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: {"phoneNumber": "+254700000000", "serviceCode": "*123#", "sessionId": "session-123", "text": ""}
+
+    Number of calls: 0
+
+      62 |
+      63 |       expect(result).toBeInstanceOf(Response);
+    > 64 |       expect(ussdService.handleRequest).toHaveBeenCalledWith({
+         |                                         ^
+      65 |         sessionId: 'session-123',
+      66 |         serviceCode: '*123#',
+      67 |         phoneNumber: '+254700000000',
+
+      at Object.toHaveBeenCalledWith (src/app/api/bot/uussd/webhook/__tests__/webhook.test.ts:64:41)
+
+  ΓùÅ /api/bot/ussd/webhook ΓÇ║ POST ΓÇ║ should return correct response format
+
+    expect(received).toBe(expected) // Object.is equality
+
+    - Expected  - 2
+    + Received  + 1
+
+    - CON Welcome to AfyaHero Hospital OS
+    - 1. Appointments
+    + END An error occurred. Please try again later.
+
+      89 |       const text = await result.text();
+      90 |
+    > 91 |       expect(text).toBe('CON Welcome to AfyaHero Hospital OS\n1. Appointments');
+         |                    ^
+      92 |       expect(result.headers.get('Freeflow')).toBe('true');
+      93 |     });
+      94 |
+
+      at Object.toBe (src/app/api/bot/uussd/webhook/__tests__/webhook.test.ts:91:20)
+
+  ΓùÅ /api/bot/ussd/webhook ΓÇ║ POST ΓÇ║ should set Freeflow header to false for closing responses
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "false"
+    Received: "true"
+
+      111 |       const result = await POST(request);
+      112 |
+    > 113 |       expect(result.headers.get('Freeflow')).toBe('false');
+          |                                              ^
+      114 |     });
+      115 |
+      116 |     it('should handle processing errors gracefully', async () => {
+
+      at Object.toBe (src/app/api/bot/uussd/webhook/__tests__/webhook.test.ts:113:46)
+
+PASS src/lib/settings/__tests__/settings-store.test.ts
+  Settings Store
+    Initial State
+      ΓêÜ should have null values for all settings initially (3 ms)
+      ΓêÜ should have loading and error states initialized
+    Doctor Settings
+      ΓêÜ should set doctor settings (26 ms)
+      ΓêÜ should merge partial updates with existing settings (5 ms)
+      ΓêÜ should reset doctor settings to defaults (5 ms)
+    Pharmacy Settings
+      ΓêÜ should set pharmacy settings (4 ms)
+      ΓêÜ should reset pharmacy settings to defaults (5 ms)
+    Laboratory Settings
+      ΓêÜ should set laboratory settings (2 ms)
+      ΓêÜ should reset laboratory settings to defaults (3 ms)
+    Admin Settings
+      ΓêÜ should set admin settings (3 ms)
+      ΓêÜ should reset admin settings to defaults (3 ms)
+    SuperAdmin Settings
+      ΓêÜ should set superadmin settings (2 ms)
+      ΓêÜ should reset superadmin settings to defaults (1 ms)
+    Reception Settings
+      ΓêÜ should set reception settings (1 ms)
+      ΓêÜ should reset reception settings to defaults (1 ms)
+    Clear All Settings
+      ΓêÜ should clear all settings (2 ms)
+    Utility Functions
+      ΓêÜ should get nested setting by path (2 ms)
+      ΓêÜ should return undefined for non-existent path (1 ms)
+      ΓêÜ should update nested setting by path (3 ms)
+    Persistence
+      ΓêÜ should update lastSynced timestamp on settings change (2 ms)
+    Error Handling
+      ΓêÜ should handle sync errors gracefully (3 ms)
+
+  console.log
+    [32mΓä╣∩╕Å [INFO][0m [WhatsAppBot] Message sent successfully {"phoneNumber":"[REDACTED]","messageId":"msg-123"}
+
+      at Logger.log (src/lib/logger.ts:201:15)
+
+  console.log
+    [31mΓ¥î [ERROR][0m [WhatsAppBot] Failed to send message {"phoneNumber":"[REDACTED]","error":{"recipients":{"0":{"status":"Failed"}}}}
+
+      at Logger.log (src/lib/logger.ts:201:15)
+
+  console.log
+    [31mΓ¥î [ERROR][0m [WhatsAppBot] Error sending message {"phoneNumber":"[REDACTED]","error":"Network error"}
+
+      at Logger.log (src/lib/logger.ts:201:15)
+
+  console.log
+    [32mΓä╣∩╕Å [INFO][0m [WhatsAppBot] Message sent successfully {"phoneNumber":"[REDACTED]","messageId":"msg-123"}
+
+      at Logger.log (src/lib/logger.ts:201:15)
+
+  console.log
+    [32mΓä╣∩╕Å [INFO][0m [WhatsAppBot] Message sent successfully {"phoneNumber":"[REDACTED]","messageId":"msg-123"}
+
+      at Logger.log (src/lib/logger.ts:201:15)
+
+  console.log
+    [32mΓä╣∩╕Å [INFO][0m [WhatsAppBot] Message sent successfully {"phoneNumber":"[REDACTED]","messageId":"msg-123"}
+
+      at Logger.log (src/lib/logger.ts:201:15)
+
+  console.log
+    [32mΓä╣∩╕Å [INFO][0m [WhatsAppBot] Message sent successfully {"phoneNumber":"[REDACTED]","messageId":"msg-123"}
+
+      at Logger.log (src/lib/logger.ts:201:15)
+
+  console.log
+    [32mΓä╣∩╕Å [INFO][0m [WhatsAppBot] Processing message {"phoneNumber":"[REDACTED]","text":"HELP"}
+
+      at Logger.log (src/lib/logger.ts:201:15)
+
+  console.log
+    [32mΓä╣∩╕Å [INFO][0m [WhatsAppBot] Message sent successfully {"phoneNumber":"[REDACTED]","messageId":"msg-456"}
+
+      at Logger.log (src/lib/logger.ts:201:15)
+
+PASS src/lib/bot/__tests__/whatsapp-bot.test.ts
+  WhatsAppBotService
+    sendMessage
+      ΓêÜ should send message successfully (19 ms)
+      ΓêÜ should handle failed message send (2 ms)
+      ΓêÜ should handle network error (2 ms)
+    sendAppointmentReminder
+      ΓêÜ should send appointment reminder with correct format (29 ms)
+    sendPrescriptionReminder
+      ΓêÜ should send prescription reminder with correct format (1 ms)
+    sendLabResultsNotification
+      ΓêÜ should send lab results notification for normal results (1 ms)
+      ΓêÜ should send lab results notification for abnormal results (1 ms)
+    handleIncomingMessage
+      ΓêÜ should process incoming webhook payload (6 ms)
+      ΓêÜ should handle outbound messages
+    verifyWebhookSignature
+      ΓêÜ should return true for valid signature (mock) (1 ms)
+
+PASS src/app/api/settings/__tests__/settings.test.ts
+  /api/settings
+    GET
+      ΓêÜ should return 401 if not authenticated (3 ms)
+      ΓêÜ should return 400 if role parameter is missing (3 ms)
+      ΓêÜ should return 400 if role is invalid (1 ms)
+      ΓêÜ should return empty settings if not found (1 ms)
+      ΓêÜ should return settings if found (2 ms)
+      ΓêÜ should handle database errors (1 ms)
+    POST
+      ΓêÜ should return 401 if not authenticated (1 ms)
+      ΓêÜ should return 400 if role parameter is missing (1 ms)
+      ΓêÜ should return 400 if settings parameter is missing (2 ms)
+      ΓêÜ should create new settings if not found (2 ms)
+      ΓêÜ should update existing settings if found (2 ms)
+      ΓêÜ should handle database errors (2 ms)
+      ΓêÜ should handle invalid JSON body (2 ms)
+
+  console.log
+    [32mΓä╣∩╕Å [INFO][0m [USSD] Handling request {"sessionId":"[REDACTED]","phoneNumber":"[REDACTED]","text":""}
+
+      at Logger.log (src/lib/logger.ts:201:15)
+
+  console.log
+    [32mΓä╣∩╕Å [INFO][0m [USSD] Handling request {"sessionId":"[REDACTED]","phoneNumber":"[REDACTED]","text":"1"}
+
+      at Logger.log (src/lib/logger.ts:201:15)
+
+  console.log
+    [32mΓä╣∩╕Å [INFO][0m [USSD] Handling request {"sessionId":"[REDACTED]","phoneNumber":"[REDACTED]","text":"9"}
+
+      at Logger.log (src/lib/logger.ts:201:15)
+
+  console.log
+    [32mΓä╣∩╕Å [INFO][0m [USSD] Handling request {"sessionId":"[REDACTED]","phoneNumber":"[REDACTED]","text":"1"}
+
+      at Logger.log (src/lib/logger.ts:201:15)
+
+  console.log
+    [32mΓä╣∩╕Å [INFO][0m [USSD] Handling request {"sessionId":"[REDACTED]","phoneNumber":"[REDACTED]","text":"2"}
+
+      at Logger.log (src/lib/logger.ts:201:15)
+
+  console.log
+    [32mΓä╣∩╕Å [INFO][0m [USSD] Handling request {"sessionId":"[REDACTED]","phoneNumber":"[REDACTED]","text":"3"}
+
+      at Logger.log (src/lib/logger.ts:201:15)
+
+  console.log
+    [32mΓä╣∩╕Å [INFO][0m [USSD] Handling request {"sessionId":"[REDACTED]","phoneNumber":"[REDACTED]","text":"1*0"}
+
+      at Logger.log (src/lib/logger.ts:201:15)
+
+  console.log
+    [32mΓä╣∩╕Å [INFO][0m [USSD] Handling request {"sessionId":"[REDACTED]","phoneNumber":"[REDACTED]","text":"6"}
+
+      at Logger.log (src/lib/logger.ts:201:15)
+
+  console.log
+    [32mΓä╣∩╕Å [INFO][0m [USSD] Handling request {"sessionId":"[REDACTED]","phoneNumber":"[REDACTED]","text":"invalid"}
+
+      at Logger.log (src/lib/logger.ts:201:15)
+
+PASS src/lib/bot/__tests__/ussd-service.test.ts
+  USSDService
+    handleRequest
+      ΓêÜ should show main menu on first request (5 ms)
+      ΓêÜ should handle main menu selection (2 ms)
+      ΓêÜ should handle invalid selection (1 ms)
+      ΓêÜ should show appointments submenu (2 ms)
+      ΓêÜ should show prescriptions submenu (1 ms)
+      ΓêÜ should show lab results submenu (2 ms)
+      ΓêÜ should handle back to main menu (2 ms)
+      ΓêÜ should handle emergency menu (1 ms)
+      ΓêÜ should handle error gracefully (1 ms)
+    getMenuLevel
+      ΓêÜ should return 0 for empty text
+      ΓêÜ should return 1 for single selection (1 ms)
+      ΓêÜ should return 2 for double selection
+      ΓêÜ should return 3 for triple selection
+
+  console.log
+    [32mΓä╣∩╕Å [INFO][0m [BotAuth] Session invalidated {"phoneNumber":"[REDACTED]"}
+
+      at Logger.log (src/lib/logger.ts:201:15)
+
+  console.log
+    [32mΓä╣∩╕Å [INFO][0m [BotAuth] Cleaned up expired sessions {"count":1}
+
+      at Logger.log (src/lib/logger.ts:201:15)
+
+  console.log
+    [32mΓä╣∩╕Å [INFO][0m [BotAuth] Cleaned up expired sessions {"count":1}
+
+      at Logger.log (src/lib/logger.ts:201:15)
+
+PASS src/lib/bot/__tests__/bot-auth.test.ts
+  BotAuthService
+    getSession
+      ΓêÜ should return null for non-existent session (2 ms)
+      ΓêÜ should return existing session (1 ms)
+      ΓêÜ should clean phone number format
+      ΓêÜ should update last activity on session access (1 ms)
+      ΓêÜ should return null for expired session
+    invalidateSession
+      ΓêÜ should remove session (4 ms)
+    cleanupExpiredSessions
+      ΓêÜ should remove expired sessions (1 ms)
+    getActiveSessionCount
+      ΓêÜ should return count of active sessions
+      ΓêÜ should exclude expired sessions from count (2 ms)
+
+Test Suites: 3 failed, 5 passed, 8 total
+Tests:       6 failed, 77 passed, 83 total
+Snapshots:   0 total
+Time:        4.109 s
+Ran all test suites.

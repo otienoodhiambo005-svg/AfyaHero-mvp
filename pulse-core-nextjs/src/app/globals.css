@@ -1,0 +1,380 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Quera Font for AFYAHERO Logo */
+@font-face {
+    font-family: 'Quera';
+    src: url('/fonts/Quera-DEMO-BF68be80d1aceec.otf') format('opentype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+    /* Portal Design System — AfyaHero Organic Palette
+       #1E3D2F (Forest Green) · #A9C3B1 (Sage) · #F2EDE4 (Sand) · #FAFAF7 (Warm White) */
+    
+    /* Sidebar — dark */
+    --sidebar-bg: #1E3D2F;
+    --sidebar-text: #FAFAF7;
+    --sidebar-accent: #A9C3B1;
+    --sidebar-hover: #152A20;
+    --sidebar-border: #152A20;
+    
+    /* KPI strip — dark */
+    --kpi-bg: #152A20;
+    --kpi-text: #FAFAF7;
+    --kpi-metric: #A9C3B1;
+    
+    /* Content area — light */
+    --content-bg: #FAFAF7;
+    --content-canvas: #F2EDE4;
+    --content-surface: #FFFFFF;
+    --content-border: #ECE6DA;
+    --vanilla: #F2EDE4;
+    
+    /* Portal accent */
+    --portal-primary: #1E3D2F;
+    --portal-primary-hover: #152A20;
+    --portal-primary-light: #EAF1EB;
+    
+    /* Per-portal accent overrides (set on <html data-portal="...">) */
+    --portal-medical: #1E3D2F;
+    --portal-medical-hover: #152A20;
+    --portal-medical-light: #EAF1EB;
+    --portal-reception: #C77C4E; /* Clay */
+    --portal-reception-hover: #B0693E;
+    --portal-reception-light: #F4E5DD;
+    --portal-lab: #7C3AED;
+    --portal-lab-hover: #6D28D9;
+    --portal-lab-light: #EDE9FE;
+    --portal-pharmacy: #059669;
+    --portal-pharmacy-hover: #047857;
+    --portal-pharmacy-light: #D1FAE5;
+    --portal-admin: #DC2626;
+    --portal-admin-hover: #B91C1C;
+    --portal-admin-light: #FEE2E2;
+    --portal-superadmin: #1E3D2F;
+    --portal-superadmin-hover: #152A20;
+    --portal-superadmin-light: #EAF1EB;
+    
+    /* AfyaHero brand */
+    --forest: #1E3D2F;
+    --forest-mid: #152A20;
+    --forest-light: #2D5945;
+    --emerald: #1E3D2F;
+    --sage: #A9C3B1;
+    --mint: #D8E6DC;
+    
+    /* Severity */
+    --severity-high: #EF4444;
+    --severity-high-bg: #FEE2E2;
+    --severity-medium: #C77C4E;
+    --severity-medium-bg: #F4E5DD;
+    --severity-low: #1E3D2F;
+    --severity-low-bg: #EAF1EB;
+    
+    /* AI content */
+    --ai-badge-bg: #EAF1EB;
+    --ai-badge-text: #1E3D2F;
+    --ai-confirmed-bg: #EAF1EB;
+    --ai-confirmed-text: #1E3D2F;
+    
+    /* Base tokens */
+    --white: #FAFAF7;
+    --off-white: #F2EDE4;
+    --paper: #FAFAF7;
+    --fog: #ECE6DA;
+    --ink: #1E3D2F;
+    --charcoal: #333333;
+    --slate: #5C7A6B;
+    --mist: #A9C3B1;
+    --serif: 'Poppins', var(--font-serif), sans-serif;
+    --sans: 'Inter', var(--font-sans), sans-serif;
+    --mono: 'DM Mono', 'Space Grotesk', monospace;
+ 
+    /* Design rhythm tokens */
+    --radius-card: 14px;
+    --radius-control: 10px;
+    --radius-badge: 9999px;
+    --space-section: 24px;
+    --space-card: 20px;
+    --space-card-compact: 16px;
+    --header-height: 56px;
+    --card-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 10px 20px rgba(15, 23, 42, 0.04);
+    --card-shadow-hover: 0 2px 6px rgba(15, 23, 42, 0.08), 0 12px 28px rgba(15, 23, 42, 0.06);
+    --text-heading: #1e3d2f;
+    --text-body: #333333;
+    --text-muted: #6b6356;
+     
+    /* Network status colors - for offline/low connectivity fallbacks */
+    --network-online: #1E3D2F;
+    --network-online-bg: #EAF1EB;
+    --network-offline: #7f1d1d;
+    --network-offline-bg: #fef2f2;
+    --network-slow: #713f12;
+    --network-slow-bg: #fefce8;
+    --network-unknown: #111827;
+    --network-unknown-bg: #f9fafb;
+ 
+    /* Claude-inspired editorial tokens — warm paper surfaces with coral/ember accents */
+    --paper-warm: #FAFAF7;
+    --paper-warm-edge: #ECE6DA;
+    --paper-warm-ink: #1E3D2F;
+    --paper-warm-muted: #6B6356;
+    --ember: #C77C4E;
+    --ember-soft: #F4E5DD;
+    --ember-edge: #E2B8A5;
+    --sage-quiet: #5C7A6B;
+    --sage-quiet-bg: #EAF1EB;
+    --amber-quiet: #B07A2E;
+}
+
+html[data-content-mode='dark'] {
+    --content-bg: #0f172a;
+    --content-canvas: #111827;
+    --content-surface: #1e293b;
+    --content-border: #334155;
+    --charcoal: #e2e8f0;
+    --slate: #94a3b8;
+    --severity-high-bg: #450a0a;
+    --severity-medium-bg: #422006;
+    --severity-low-bg: #0c2d48;
+    --ai-badge-bg: #0c2d48;
+    --ai-confirmed-bg: #0c2d48;
+}
+
+/* Portal-specific accent overrides — set data-portal on <html> */
+html[data-portal='medical'] {
+    --portal-primary: var(--portal-medical);
+    --portal-primary-hover: var(--portal-medical-hover);
+    --portal-primary-light: var(--portal-medical-light);
+}
+html[data-portal='reception'] {
+    --portal-primary: var(--portal-reception);
+    --portal-primary-hover: var(--portal-reception-hover);
+    --portal-primary-light: var(--portal-reception-light);
+}
+html[data-portal='lab'] {
+    --portal-primary: var(--portal-lab);
+    --portal-primary-hover: var(--portal-lab-hover);
+    --portal-primary-light: var(--portal-lab-light);
+}
+html[data-portal='pharmacy'] {
+    --portal-primary: var(--portal-pharmacy);
+    --portal-primary-hover: var(--portal-pharmacy-hover);
+    --portal-primary-light: var(--portal-pharmacy-light);
+}
+html[data-portal='admin'] {
+    --portal-primary: var(--portal-admin);
+    --portal-primary-hover: var(--portal-admin-hover);
+    --portal-primary-light: var(--portal-admin-light);
+}
+html[data-portal='superadmin'] {
+    --portal-primary: var(--portal-superadmin);
+    --portal-primary-hover: var(--portal-superadmin-hover);
+    --portal-primary-light: var(--portal-superadmin-light);
+}
+
+body {
+    /* Fallback color in case CSS variables fail */
+    background-color: #FFFFFF;
+    background-color: var(--content-bg);
+    color: #253540;
+    color: var(--charcoal);
+    font-family: 'DM Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-family: var(--sans);
+    
+    /* Ensure text is readable even if fonts fail to load */
+    font-weight: 400;
+    line-height: 1.5;
+}
+
+.dashboard-surface {
+    border: 1px solid var(--content-border);
+    background: var(--content-bg);
+    border-radius: var(--radius-card);
+    box-shadow: var(--card-shadow);
+}
+
+/* Critical offline indicator styles - always visible even with CSS issues */
+.offline-indicator {
+    background-color: #fef2f2 !important;
+    color: #7f1d1d !important;
+    border: 1px solid #fecaca !important;
+}
+
+.online-indicator {
+    background-color: #f0fdf4 !important;
+    color: #166534 !important;
+    border: 1px solid #bbf7d0 !important;
+}
+
+.slow-indicator {
+    background-color: #fefce8 !important;
+    color: #713f12 !important;
+    border: 1px solid #fde047 !important;
+}
+
+/* Custom scrollbar for dark theme */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #0F4C75;
+    border-radius: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #3282B8;
+}
+
+/* Animations — replaces tailwindcss-animate dependency */
+@keyframes animate-in {
+    from { opacity: 0; transform: translateY(4px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes toast-progress {
+    from { width: 100%; }
+    to { width: 0%; }
+}
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes slide-in-from-bottom {
+    from { transform: translateY(8px); }
+    to { transform: translateY(0); }
+}
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(50,130,184,0.4); }
+    50% { box-shadow: 0 0 12px 4px rgba(50,130,184,0.15); }
+}
+@keyframes slide-in-left {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+}
+@keyframes slide-out-left {
+    from { transform: translateX(0); }
+    to { transform: translateX(-100%); }
+}
+@keyframes backdrop-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Ensure native select option lists are readable on dark backgrounds */
+select option {
+    background-color: var(--content-bg);
+    color: var(--charcoal);
+}
+select option:disabled {
+    color: color-mix(in srgb, var(--charcoal) 40%, transparent);
+}
+
+@layer utilities {
+    .text-balance {
+        text-wrap: balance;
+    }
+    .animate-in {
+        animation: animate-in 0.5s ease-out both;
+    }
+    .fade-in {
+        animation: fade-in 0.5s ease-out both;
+    }
+    .slide-in-from-bottom-2 {
+        animation: slide-in-from-bottom 0.4s ease-out both;
+    }
+    .pulse-glow {
+        animation: pulse-glow 2s ease-in-out infinite;
+    }
+    .slide-in-left {
+        animation: slide-in-left 0.25s ease-out both;
+    }
+    .slide-out-left {
+        animation: slide-out-left 0.2s ease-in both;
+    }
+    .backdrop-in {
+        animation: backdrop-in 0.2s ease-out both;
+    }
+
+    /* Severity badge utilities — map Tailwind color classes to design tokens */
+    .badge-severity-high {
+        background-color: var(--severity-high-bg);
+        color: var(--severity-high);
+        border: 1px solid color-mix(in srgb, var(--severity-high) 30%, transparent);
+    }
+    .badge-severity-medium {
+        background-color: var(--severity-medium-bg);
+        color: var(--severity-medium);
+        border: 1px solid color-mix(in srgb, var(--severity-medium) 30%, transparent);
+    }
+    .badge-severity-low {
+        background-color: var(--severity-low-bg);
+        color: var(--severity-low);
+        border: 1px solid color-mix(in srgb, var(--severity-low) 30%, transparent);
+    }
+
+    /* Simplified panel styles - no decorative glass effects */
+    .glass-panel {
+        @apply bg-[#141D24] border border-[#0F4C75]/30;
+    }
+
+    .glass-card {
+        @apply bg-white border border-[var(--content-border)];
+        border-radius: var(--radius-card);
+        box-shadow: var(--card-shadow);
+    }
+
+    .hover-glow {
+        @apply transition-shadow duration-200;
+    }
+
+    .hover-glow:hover {
+        box-shadow: var(--card-shadow-hover);
+    }
+
+    .bg-premium-gradient {
+        @apply bg-[#1B262C];
+    }
+
+    .glass-overlay {
+        @apply absolute inset-0 bg-black/10 pointer-events-none rounded-[inherit];
+    }
+}
+
+@layer base {
+    /* Focus-visible styles for keyboard navigation accessibility */
+    :focus-visible {
+        outline: 2px solid var(--portal-primary, #3282B8);
+        outline-offset: 2px;
+        border-radius: 4px;
+    }
+    
+    button:focus-visible,
+    a:focus-visible,
+    [role="button"]:focus-visible {
+        outline: 2px solid var(--portal-primary, #3282B8);
+        outline-offset: 2px;
+        box-shadow: 0 0 0 4px rgba(50, 130, 184, 0.2);
+    }
+    
+    /* Skip to main content link for screen readers */
+    .skip-link {
+        @apply absolute -top-10 left-0 bg-portal-primary text-white px-4 py-2 z-50 transition-transform;
+    }
+    
+    .skip-link:focus {
+        @apply top-0;
+    }
+}
+
+@media (max-width: 768px) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

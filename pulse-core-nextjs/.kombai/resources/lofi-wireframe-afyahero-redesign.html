@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AfyaHero — Redesign Wireframe (Balanced Approach)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+    background: #f0f0f0;
+    color: #222;
+    font-size: 13px;
+  }
+  /* ── Legend ────────────────────────────── */
+  .legend {
+    padding: 12px 20px;
+    background: #fff;
+    border-bottom: 2px solid #333;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .legend h2 { font-size: 15px; font-weight: bold; margin-right: 8px; }
+  .badge-reuse {
+    background: #4CAF50; color: #fff;
+    padding: 2px 8px; border-radius: 4px;
+    font-size: 11px; font-weight: bold; font-family: Arial, sans-serif;
+  }
+  .badge-new {
+    background: #FF9800; color: #fff;
+    padding: 2px 8px; border-radius: 4px;
+    font-size: 11px; font-weight: bold; font-family: Arial, sans-serif;
+  }
+  .badge-fix {
+    background: #E53935; color: #fff;
+    padding: 2px 8px; border-radius: 4px;
+    font-size: 11px; font-weight: bold; font-family: Arial, sans-serif;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-family: Arial, sans-serif; font-size: 12px; }
+
+  /* ── App Shell ───────────────────────── */
+  .app-shell {
+    display: flex;
+    height: calc(100vh - 49px);
+    min-height: 700px;
+    background: #e8e8e8;
+  }
+
+  /* ── Sidebar ─────────────────────────── */
+  .sidebar {
+    width: 220px;
+    min-width: 220px;
+    background: #fff;
+    border-right: 2px solid #999;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .sidebar-header {
+    padding: 16px 14px 12px;
+    border-bottom: 1px solid #ccc;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-box {
+    width: 32px; height: 32px;
+    border: 2px solid #555;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; font-size: 14px;
+  }
+  .brand-name { font-size: 15px; font-weight: bold; }
+  .sidebar-toggle {
+    margin-left: auto; font-size: 18px; cursor: pointer; color: #666;
+  }
+
+  .nav-section-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #888;
+    font-family: Arial, sans-serif;
+    padding: 12px 14px 4px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 14px;
+    border-radius: 6px;
+    margin: 1px 8px;
+    cursor: pointer;
+    color: #444;
+    border: 1px solid transparent;
+  }
+  .nav-item.active {
+    background: #f0f0f0;
+    border-color: #bbb;
+    color: #111;
+    font-weight: bold;
+  }
+  .nav-item:hover { background: #f5f5f5; }
+  .nav-icon {
+    width: 18px; height: 18px;
+    border: 1.5px solid currentColor;
+    border-radius: 3px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px;
+  }
+  .nav-badge {
+    margin-left: auto;
+    background: #ddd; color: #555;
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 10px;
+    font-family: Arial, sans-serif;
+  }
+  .sidebar-footer {
+    margin-top: auto;
+    border-top: 1px dashed #ccc;
+    padding: 10px 8px;
+  }
+  .ai-widget {
+    border: 2px dashed #999;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 8px;
+    text-align: center;
+    background: #fafafa;
+    position: relative;
+  }
+  .ai-widget-title { font-weight: bold; font-size: 11px; margin-bottom: 6px; }
+  .ai-widget-btn {
+    width: 100%; padding: 6px;
+    background: #ddd; border: 1.5px solid #999;
+    border-radius: 4px; font-size: 11px; cursor: pointer;
+    font-family: 'Comic Sans MS', cursive;
+  }
+  .logout-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 6px;
+    color: #888; cursor: pointer;
+    font-size: 12px;
+  }
+  .logout-btn:hover { background: #fee2e2; color: #c00; }
+
+  /* ── Main Area ───────────────────────── */
+  .main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ── Top Bar ─────────────────────────── */
+  .topbar {
+    height: 52px; min-height: 52px;
+    background: #fff;
+    border-bottom: 1.5px solid #bbb;
+    display: flex; align-items: center;
+    padding: 0 20px;
+    gap: 12px;
+    position: relative;
+  }
+  .search-box {
+    flex: 1; max-width: 380px;
+    border: 1.5px solid #bbb;
+    border-radius: 20px;
+    padding: 6px 14px 6px 32px;
+    font-size: 12px;
+    background: #f7f7f7;
+    color: #777;
+    font-family: Arial, sans-serif;
+    position: relative;
+  }
+  .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 14px; color: #aaa; }
+  .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .icon-btn {
+    width: 32px; height: 32px;
+    border: 1.5px solid #ccc;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 14px;
+    background: #f5f5f5;
+  }
+  .notif-btn { position: relative; }
+  .notif-dot {
+    position: absolute; top: 2px; right: 2px;
+    width: 8px; height: 8px;
+    background: #555; border-radius: 50%;
+    border: 1.5px solid #fff;
+  }
+  .user-chip {
+    display: flex; align-items: center; gap: 8px;
+    border: 1.5px solid #ccc; border-radius: 20px;
+    padding: 4px 10px 4px 4px;
+    background: #f5f5f5;
+  }
+  .avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%; background: #888;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 11px; font-weight: bold;
+    font-family: Arial, sans-serif;
+    flex-shrink: 0;
+  }
+  .user-info { font-size: 11px; font-family: Arial, sans-serif; }
+  .user-name { font-weight: bold; color: #222; }
+  .user-role { color: #888; }
+
+  /* ── KPI Strip ───────────────────────── */
+  .kpi-strip {
+    background: #f7f7f7;
+    border-bottom: 1px solid #ccc;
+    padding: 8px 20px;
+    display: flex; gap: 0;
+    position: relative;
+  }
+  .kpi-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 4px 20px 4px 0;
+    margin-right: 20px;
+    border-right: 1px dashed #ccc;
+  }
+  .kpi-item:last-child { border-right: none; }
+  .kpi-icon { font-size: 18px; color: #888; }
+  .kpi-label { font-size: 10px; text-transform: uppercase; color: #999; font-family: Arial, sans-serif; }
+  .kpi-value { font-size: 18px; font-weight: bold; font-family: Arial, sans-serif; color: #333; line-height: 1; }
+
+  /* ── Scrollable Content ───────────────── */
+  .content-scroll { flex: 1; overflow-y: auto; padding: 20px 24px; background: #f9f9f9; }
+
+  /* ── Page Title Band ─────────────────── */
+  .page-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .page-title { font-size: 20px; font-weight: bold; }
+  .page-subtitle { font-size: 11px; text-transform: uppercase; color: #888; font-family: Arial, sans-serif; letter-spacing: 0.08em; margin-top: 2px; }
+
+  /* ── Bento Grid ──────────────────────── */
+  .bento-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .bento-card {
+    background: #fff;
+    border: 1.5px solid #ccc;
+    border-radius: 8px;
+    padding: 14px;
+    position: relative;
+  }
+  .bento-card .card-label {
+    font-size: 10px; text-transform: uppercase;
+    color: #999; font-family: Arial, sans-serif; letter-spacing: 0.08em;
+  }
+  .bento-card .card-value {
+    font-size: 26px; font-weight: bold;
+    font-family: Arial, sans-serif; color: #222;
+    margin: 6px 0 2px;
+  }
+  .bento-card .card-trend {
+    font-size: 11px; color: #666;
+    font-family: Arial, sans-serif;
+  }
+  .bento-card .card-icon {
+    position: absolute; top: 12px; right: 12px;
+    width: 32px; height: 32px;
+    border: 1.5px solid #ccc; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; background: #f5f5f5;
+  }
+
+  /* ── Two-col row ─────────────────────── */
+  .two-col { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+
+  .panel {
+    background: #fff;
+    border: 1.5px solid #ccc;
+    border-radius: 8px;
+    padding: 14px;
+    position: relative;
+  }
+  .panel-title { font-size: 13px; font-weight: bold; margin-bottom: 10px; }
+  .panel-subtitle { font-size: 10px; color: #aaa; font-family: Arial, sans-serif; margin-top: 1px; }
+
+  /* Chart placeholder */
+  .chart-area {
+    border: 1.5px dashed #ccc;
+    border-radius: 6px;
+    height: 180px;
+    display: flex; align-items: flex-end; justify-content: space-around;
+    padding: 12px 8px;
+    background: #fafafa;
+    overflow: hidden;
+  }
+  .chart-bar {
+    width: 28px;
+    background: #bbb;
+    border-radius: 3px 3px 0 0;
+    position: relative;
+  }
+  .chart-label {
+    text-align: center; margin-top: 4px;
+    font-size: 9px; color: #999; font-family: Arial, sans-serif;
+  }
+  .chart-line-area {
+    border: 1.5px dashed #ccc;
+    border-radius: 6px;
+    height: 200px;
+    background: #fafafa;
+    position: relative;
+    overflow: hidden;
+  }
+  .chart-line-placeholder {
+    position: absolute; bottom: 30px; left: 10px; right: 10px;
+    height: 100px;
+    border-top: 2px solid #999;
+    border-left: 2px solid #999;
+  }
+  .chart-squiggle {
+    position: absolute; bottom: 30px; left: 0; right: 0;
+    font-size: 40px; color: #ccc; text-align: center;
+    letter-spacing: -5px;
+  }
+
+  /* Activity feed */
+  .feed-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px dashed #eee;
+  }
+  .feed-item:last-child { border-bottom: none; }
+  .feed-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%; background: #999;
+    margin-top: 4px; flex-shrink: 0;
+  }
+  .feed-text { font-size: 12px; color: #444; line-height: 1.4; }
+  .feed-time { font-size: 10px; color: #bbb; font-family: Arial, sans-serif; }
+
+  /* Status pill */
+  .pill {
+    display: inline-block;
+    padding: 2px 8px; border-radius: 10px;
+    font-size: 10px; font-family: Arial, sans-serif; font-weight: bold;
+    border: 1px solid #ccc; background: #f5f5f5; color: #555;
+  }
+  .pill.active { border-color: #555; background: #555; color: #fff; }
+
+  /* Table */
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th {
+    text-align: left; padding: 8px 10px;
+    font-size: 10px; text-transform: uppercase;
+    color: #aaa; font-family: Arial, sans-serif; letter-spacing: 0.08em;
+    border-bottom: 1.5px solid #ddd;
+  }
+  .data-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 12px; color: #444;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: #fafafa; }
+
+  /* Tabs */
+  .tab-bar { display: flex; gap: 0; border-bottom: 1.5px solid #ccc; margin-bottom: 14px; }
+  .tab {
+    padding: 8px 16px; font-size: 12px; cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -2px; color: #888;
+  }
+  .tab.active { border-bottom-color: #333; color: #222; font-weight: bold; }
+
+  /* Buttons */
+  .btn-primary {
+    padding: 8px 16px; background: #555; color: #fff;
+    border: none; border-radius: 6px; cursor: pointer;
+    font-size: 12px; font-family: 'Comic Sans MS', cursive;
+  }
+  .btn-secondary {
+    padding: 8px 16px; background: #fff; color: #444;
+    border: 1.5px solid #bbb; border-radius: 6px; cursor: pointer;
+    font-size: 12px; font-family: 'Comic Sans MS', cursive;
+  }
+
+  /* Fix callout */
+  .fix-note {
+    border: 1.5px dashed #E53935;
+    border-radius: 6px; padding: 6px 10px;
+    font-size: 11px; color: #c00;
+    background: #fff5f5;
+    margin-top: 6px;
+    font-family: Arial, sans-serif;
+  }
+  .issue-tag {
+    position: absolute; top: -10px; left: 10px;
+    background: #E53935; color: #fff;
+    padding: 2px 8px; border-radius: 4px;
+    font-size: 10px; font-weight: bold; font-family: Arial, sans-serif;
+    z-index: 10;
+  }
+
+  /* Annotation bubbles */
+  .annotation {
+    background: #fffde7; border: 1px solid #f0e000;
+    border-radius: 6px; padding: 6px 10px;
+    font-size: 11px; font-family: Arial, sans-serif; color: #555;
+    margin-top: 8px;
+  }
+
+  /* Page Sections Nav */
+  .sections-nav {
+    display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;
+  }
+  .section-btn {
+    padding: 6px 14px; border: 1.5px solid #bbb;
+    border-radius: 20px; background: #fff; font-size: 12px;
+    cursor: pointer; font-family: 'Comic Sans MS', cursive;
+  }
+  .section-btn.active { background: #333; color: #fff; border-color: #333; }
+
+  /* Responsive note */
+  .mobile-note {
+    background: #f0f0f0; border: 1.5px dashed #999;
+    border-radius: 6px; padding: 10px 14px; margin-top: 10px;
+  }
+
+  /* Wireframe header */
+  .wf-header {
+    background: #222; color: #fff;
+    padding: 12px 20px;
+    display: flex; align-items: center; gap: 16px;
+    flex-wrap: wrap;
+  }
+  .wf-title { font-size: 14px; font-weight: bold; font-family: Arial, sans-serif; }
+  .wf-desc { font-size: 12px; color: #bbb; font-family: Arial, sans-serif; }
+
+  /* Sidebar collapse indicator */
+  .collapse-rail {
+    width: 4px; background: #e0e0e0; cursor: col-resize;
+    flex-shrink: 0;
+  }
+
+  /* Floating note */
+  .float-note {
+    position: absolute;
+    background: #fffde7; border: 1px solid #f0c000;
+    border-radius: 6px; padding: 6px 10px;
+    font-size: 11px; font-family: Arial, sans-serif; color: #555;
+    max-width: 180px; z-index: 20;
+    box-shadow: 2px 2px 0 #e0c000;
+  }
+
+  .section-divider {
+    font-size: 11px; font-family: Arial, sans-serif;
+    color: #999; text-transform: uppercase; letter-spacing: 0.12em;
+    padding: 16px 0 6px;
+    border-top: 1px dashed #ddd;
+    margin-bottom: 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════
+     LEGEND + TITLE
+══════════════════════════════════════════════════ -->
+<div class="wf-header">
+  <div class="wf-title">AfyaHero — Redesign Wireframe</div>
+  <div class="wf-desc">Balanced redesign: consistent light theme · unified component language · accessible · mobile-aware sidebar</div>
+</div>
+<div class="legend">
+  <div style="font-family:Arial,sans-serif;font-size:12px;font-weight:bold;">Component Tags:</div>
+  <div class="legend-item"><span class="badge-reuse">[REUSE]</span> Existing component reused</div>
+  <div class="legend-item"><span class="badge-new">[NEW]</span> New component to create</div>
+  <div class="legend-item"><span class="badge-fix">[FIX]</span> Existing component needs fix</div>
+  <div style="margin-left:auto;font-family:Arial,sans-serif;font-size:11px;color:#888;">Sections shown: Dashboard • Consultations • Settings • Mobile Sidebar</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 1 — DASHBOARD PAGE
+══════════════════════════════════════════════════ -->
+<div style="padding:16px 20px 4px; background:#f0f0f0;">
+  <div class="section-divider">▶ SECTION 1 — DASHBOARD (Main Entry Point)</div>
+</div>
+
+<div class="app-shell" style="min-height:780px;">
+
+  <!-- SIDEBAR -->
+  <!-- REUSABLE: Sidebar from src/components/shared/Sidebar.tsx (with fixes) -->
+  <div class="sidebar" style="position:relative;">
+    <span class="badge-fix" style="position:absolute;top:4px;right:4px;z-index:10;font-family:Arial,sans-serif;">[FIX] Sidebar</span>
+
+    <div class="sidebar-header">
+      <div class="logo-box">✚</div>
+      <span class="brand-name">AfyaHero</span>
+      <!-- NEW: Sidebar collapse toggle button -->
+      <span class="sidebar-toggle" title="Collapse sidebar">‹</span>
+    </div>
+
+    <div class="nav-section-label">Clinical</div>
+    <div class="nav-item active">
+      <div class="nav-icon">⊞</div> Dashboard
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">☰</div> Patient Queue <span class="nav-badge">7</span>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">✚</div> Consultations
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">📅</div> Appointments
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">🎥</div> Teleconsult
+    </div>
+
+    <div class="nav-section-label">Management</div>
+    <div class="nav-item">
+      <div class="nav-icon">💊</div> Pharmacy
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">🧪</div> Laboratory
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">🏥</div> Wards & Beds
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">$</div> Billing
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">📊</div> Analytics
+    </div>
+
+    <div class="sidebar-footer">
+      <!-- REUSABLE: AI Widget from src/components/shared/Sidebar.tsx -->
+      <div class="ai-widget" style="position:relative;">
+        <span class="badge-reuse" style="position:absolute;top:-8px;right:-4px;font-family:Arial,sans-serif;">[REUSE] AIWidget</span>
+        <div class="ai-widget-title">⚡ Afya AI v3.1</div>
+        <div style="font-size:10px;color:#888;margin-bottom:6px;font-family:Arial,sans-serif;">Clinical intelligence</div>
+        <button class="ai-widget-btn">Quick Assistant</button>
+      </div>
+
+      <div class="nav-item" style="color:#888;margin-top:4px;">
+        <div class="nav-icon" style="font-size:12px;">⤴</div> Settings
+      </div>
+      <div class="logout-btn">
+        <span>→|</span> Logout
+      </div>
+    </div>
+
+    <!-- Fix note: mobile toggle needed -->
+    <div class="fix-note" style="margin:6px;font-size:10px;">
+      ⚠ FIX: Add mobile overlay toggle.<br>hamburger in Header must actually open/close this sidebar.
+    </div>
+  </div>
+
+  <!-- Resize rail -->
+  <div class="collapse-rail" title="Drag to resize"></div>
+
+  <!-- MAIN AREA -->
+  <div class="main-area">
+
+    <!-- TOP BAR -->
+    <!-- REUSABLE: Header from src/components/shared/Header.tsx (with fixes) -->
+    <div class="topbar" style="position:relative;">
+      <span class="badge-fix" style="position:absolute;top:4px;right:4px;z-index:10;font-family:Arial,sans-serif;">[FIX] Header</span>
+
+      <!-- Mobile hamburger — wired to sidebar state -->
+      <div class="icon-btn" title="Toggle Sidebar (mobile)" style="display:none;">☰</div>
+
+      <div style="position:relative;flex:1;max-width:380px;">
+        <span class="search-icon">🔍</span>
+        <div class="search-box" style="display:block;">Search patients, staff, records... &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+      </div>
+
+      <div class="topbar-right">
+        <div class="icon-btn" title="Help">?</div>
+        <!-- REUSABLE: NotificationPanel from src/components/portal/NotificationPanel.tsx -->
+        <div class="notif-btn icon-btn" title="Notifications" style="position:relative;">
+          🔔
+          <div class="notif-dot"></div>
+          <span class="badge-reuse" style="position:absolute;top:-10px;right:-10px;font-family:Arial,sans-serif;font-size:9px;">[REUSE]</span>
+        </div>
+        <div style="width:1px;height:24px;background:#ddd;"></div>
+        <div class="user-chip">
+          <div class="avatar">AD</div>
+          <div class="user-info">
+            <div class="user-name">Admin User</div>
+            <div class="user-role">Administrator</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI STRIP -->
+    <!-- REUSABLE: KPIHeroStrip from src/components/portal/KPIHeroStrip.tsx (with fix) -->
+    <div class="kpi-strip" style="position:relative;">
+      <span class="badge-fix" style="position:absolute;top:4px;right:4px;font-family:Arial,sans-serif;font-size:10px;">[FIX] KPIStrip</span>
+      <div class="kpi-item">
+        <div class="kpi-icon">👥</div>
+        <div><div class="kpi-label">Queue</div><div class="kpi-value">7</div></div>
+      </div>
+      <div class="kpi-item">
+        <div class="kpi-icon">🩺</div>
+        <div><div class="kpi-label">Active Consults</div><div class="kpi-value">3</div></div>
+      </div>
+      <div class="kpi-item">
+        <div class="kpi-icon">🛏</div>
+        <div><div class="kpi-label">Available Beds</div><div class="kpi-value">22</div></div>
+      </div>
+      <div class="kpi-item">
+        <div class="kpi-icon">📅</div>
+        <div><div class="kpi-label">Today's Appts</div><div class="kpi-value">14</div></div>
+      </div>
+      <div style="margin-left:auto;font-size:10px;color:#bbb;font-family:Arial,sans-serif;align-self:center;">
+        ● Live — Last sync 12s ago
+      </div>
+    </div>
+
+    <!-- SCROLLABLE CONTENT -->
+    <div class="content-scroll">
+
+      <!-- Page header -->
+      <div class="page-header">
+        <div>
+          <div class="page-title">Hospital Overview</div>
+          <div class="page-subtitle">Clinical Intelligence Dashboard · AfyaHero 2026</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-secondary">↓ Export</button>
+          <button class="btn-primary">+ Quick Add</button>
+        </div>
+      </div>
+
+      <!-- BENTO KPI GRID -->
+      <!-- NEW: Unified StatCard component for consistent KPI cards -->
+      <div style="position:relative;">
+        <span class="badge-new" style="position:absolute;top:-10px;left:0;font-family:Arial,sans-serif;">[NEW] StatCard component — replaces ad-hoc inline KPI cards</span>
+        <div class="bento-grid" style="margin-top:14px;">
+          <div class="bento-card">
+            <div class="card-icon">👥</div>
+            <div class="card-label">Active Patients</div>
+            <div class="card-value">248</div>
+            <div class="card-trend">↑ +2.4% vs last week</div>
+          </div>
+          <div class="bento-card">
+            <div class="card-icon">👷</div>
+            <div class="card-label">Staff on Duty</div>
+            <div class="card-value">34</div>
+            <div class="card-trend">↑ +1.2% vs yesterday</div>
+          </div>
+          <div class="bento-card">
+            <div class="card-icon">🛏</div>
+            <div class="card-label">Bed Occupancy</div>
+            <div class="card-value">64%</div>
+            <div class="card-trend">↓ -1.5% (improving)</div>
+          </div>
+          <div class="bento-card">
+            <div class="card-icon">⏱</div>
+            <div class="card-label">Avg. Wait Time</div>
+            <div class="card-value">14m</div>
+            <div class="card-trend">↓ -2.1% (improving)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TWO-COL: Chart + Operations -->
+      <div class="two-col" style="margin-top:12px;">
+
+        <!-- Chart panel -->
+        <!-- REUSABLE: Recharts AreaChart from src/app/dashboard/page.tsx -->
+        <div class="panel" style="position:relative;">
+          <span class="badge-reuse" style="position:absolute;top:4px;right:4px;font-family:Arial,sans-serif;">[REUSE] AreaChart (Recharts)</span>
+          <div class="panel-title">Patient Admissions Trend</div>
+          <div class="panel-subtitle">Past 7 days · Real-time</div>
+          <div class="chart-line-area" style="margin-top:12px;">
+            <div class="chart-squiggle" style="bottom:20px;">〜〜〜〜〜〜〜</div>
+            <div style="position:absolute;bottom:8px;left:0;right:0;display:flex;justify-content:space-around;font-size:10px;color:#bbb;font-family:Arial,sans-serif;">
+              <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+            </div>
+          </div>
+          <div class="annotation">ℹ️  Tooltip shows admission count on hover. "Live Sync" badge retained.</div>
+        </div>
+
+        <!-- Operations panel — redesigned -->
+        <div class="panel" style="position:relative;">
+          <span class="badge-new" style="position:absolute;top:4px;right:4px;font-family:Arial,sans-serif;">[NEW] SystemStatusPanel</span>
+          <div class="panel-title">System Status</div>
+
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+            <div class="feed-item">
+              <div class="feed-dot" style="background:#333;"></div>
+              <div class="feed-text">
+                <strong>Infrastructure Core</strong><br>
+                <span class="feed-time">● Optimal · Node Sync</span>
+              </div>
+              <span class="pill active" style="margin-left:auto;">OK</span>
+            </div>
+            <div class="feed-item">
+              <div class="feed-dot" style="background:#999;"></div>
+              <div class="feed-text">
+                <strong>Patient Registry</strong><br>
+                <span class="feed-time">● Live · Cloud Sync</span>
+              </div>
+              <span class="pill active" style="margin-left:auto;">OK</span>
+            </div>
+            <div class="feed-item">
+              <div class="feed-dot" style="background:#999;"></div>
+              <div class="feed-text">
+                <strong>Clinical Protocols</strong><br>
+                <span class="feed-time">Updated · v3.1</span>
+              </div>
+              <span class="pill" style="margin-left:auto;">v3.1</span>
+            </div>
+          </div>
+
+          <div style="margin-top:12px;padding:10px;border:1px solid #ccc;border-radius:6px;background:#fafafa;font-size:11px;color:#666;font-family:Arial,sans-serif;line-height:1.5;">
+            📋 Status Report: All clinical nodes performing within optimised parameters. Throughput +14%.
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTTOM THREE-COL -->
+      <div class="three-col">
+
+        <!-- Recent Queue -->
+        <!-- NEW: RecentQueueWidget -->
+        <div class="panel" style="position:relative;">
+          <span class="badge-new" style="position:absolute;top:4px;right:4px;font-family:Arial,sans-serif;">[NEW] RecentQueue</span>
+          <div class="panel-title">Patient Queue</div>
+          <table class="data-table">
+            <thead><tr><th>Patient</th><th>Wait</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Amina W.</td><td>8m</td><td><span class="pill active">Active</span></td></tr>
+              <tr><td>James O.</td><td>23m</td><td><span class="pill">Waiting</span></td></tr>
+              <tr><td>Grace M.</td><td>+15m</td><td><span class="pill">Scheduled</span></td></tr>
+            </tbody>
+          </table>
+          <button class="btn-secondary" style="width:100%;margin-top:10px;font-size:11px;">View Full Queue →</button>
+        </div>
+
+        <!-- Ward Summary -->
+        <!-- NEW: WardSummaryWidget -->
+        <div class="panel" style="position:relative;">
+          <span class="badge-new" style="position:absolute;top:4px;right:4px;font-family:Arial,sans-serif;">[NEW] WardSummary</span>
+          <div class="panel-title">Ward Occupancy</div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;font-family:Arial,sans-serif;">
+                <span>General Med</span><span style="font-weight:bold;">81%</span>
+              </div>
+              <div style="height:6px;background:#eee;border-radius:3px;"><div style="width:81%;height:100%;background:#888;border-radius:3px;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;font-family:Arial,sans-serif;">
+                <span>Surgical</span><span style="font-weight:bold;">75%</span>
+              </div>
+              <div style="height:6px;background:#eee;border-radius:3px;"><div style="width:75%;height:100%;background:#888;border-radius:3px;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;font-family:Arial,sans-serif;">
+                <span>HDU</span><span style="font-weight:bold;color:#555;">92% ⚠</span>
+              </div>
+              <div style="height:6px;background:#eee;border-radius:3px;"><div style="width:92%;height:100%;background:#444;border-radius:3px;"></div></div>
+            </div>
+          </div>
+          <button class="btn-secondary" style="width:100%;margin-top:10px;font-size:11px;">Manage Wards →</button>
+        </div>
+
+        <!-- Pharmacy Alerts -->
+        <!-- NEW: PharmacyAlertsWidget -->
+        <div class="panel" style="position:relative;">
+          <span class="badge-new" style="position:absolute;top:4px;right:4px;font-family:Arial,sans-serif;">[NEW] PharmacyAlerts</span>
+          <div class="panel-title">Pharmacy Alerts</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">
+            <div style="padding:7px 10px;border:1px solid #ccc;border-radius:6px;font-size:12px;background:#fafafa;">
+              <div style="font-weight:bold;">Insulin Glargine</div>
+              <div style="font-size:10px;color:#888;font-family:Arial,sans-serif;">OUT OF STOCK · 0 vials</div>
+            </div>
+            <div style="padding:7px 10px;border:1px solid #ccc;border-radius:6px;font-size:12px;background:#fafafa;">
+              <div style="font-weight:bold;">Amoxicillin</div>
+              <div style="font-size:10px;color:#888;font-family:Arial,sans-serif;">LOW STOCK · 45 capsules</div>
+            </div>
+          </div>
+          <button class="btn-secondary" style="width:100%;margin-top:10px;font-size:11px;">View Pharmacy →</button>
+        </div>
+
+      </div>
+
+    </div><!-- /content-scroll -->
+  </div><!-- /main-area -->
+</div><!-- /app-shell -->
+
+<!-- DESIGN NOTES for Section 1 -->
+<div style="background:#fffde7;border:1px solid #f0c000;margin:0 20px;padding:12px 16px;font-family:Arial,sans-serif;font-size:12px;color:#555;border-radius:0 0 6px 6px;">
+  <strong>Key changes from current Dashboard:</strong>
+  <ul style="margin-top:4px;padding-left:16px;line-height:1.8;">
+    <li>Light theme throughout (eliminates dark/light split that causes visual inconsistency)</li>
+    <li>KPI stat cards: reduced border-radius from 32-40px → 8px for a more professional, clinical feel</li>
+    <li>Added 3 new dashboard widgets (Queue, Ward Occupancy, Pharmacy Alerts) replacing the generic "Operations" panel</li>
+    <li>Sidebar: added section grouping labels + collapse rail + working mobile toggle</li>
+    <li>KPI strip: added "Last sync" indicator and live dot for real-time status</li>
+  </ul>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 2 — CONSULTATIONS PAGE (list view)
+══════════════════════════════════════════════════ -->
+<div style="padding:16px 20px 4px; background:#f0f0f0;margin-top:24px;">
+  <div class="section-divider">▶ SECTION 2 — CONSULTATIONS PAGE (consistent light theme)</div>
+</div>
+
+<div class="app-shell" style="height:560px;min-height:560px;">
+  <!-- Sidebar (collapsed icon rail for variety) -->
+  <div class="sidebar" style="width:56px;min-width:56px;align-items:center;padding:12px 0;">
+    <div class="logo-box" style="margin:8px 0 16px;">✚</div>
+    <div style="display:flex;flex-direction:column;gap:4px;width:100%;align-items:center;">
+      <div class="nav-item active" style="width:40px;height:40px;padding:0;justify-content:center;border-radius:8px;"><div class="nav-icon" style="border:none;font-size:16px;">⊞</div></div>
+      <div class="nav-item" style="width:40px;height:40px;padding:0;justify-content:center;border-radius:8px;"><div class="nav-icon" style="border:none;font-size:16px;">☰</div></div>
+      <div class="nav-item" style="width:40px;height:40px;padding:0;justify-content:center;border-radius:8px;background:#f0f0f0;border-color:#bbb;"><div class="nav-icon" style="border:none;font-size:16px;">✚</div></div>
+      <div class="nav-item" style="width:40px;height:40px;padding:0;justify-content:center;border-radius:8px;"><div class="nav-icon" style="border:none;font-size:16px;">📅</div></div>
+      <div class="nav-item" style="width:40px;height:40px;padding:0;justify-content:center;border-radius:8px;"><div class="nav-icon" style="border:none;font-size:16px;">🎥</div></div>
+    </div>
+    <div style="margin-top:auto;margin-bottom:12px;">
+      <div class="nav-item" style="width:40px;height:40px;padding:0;justify-content:center;border-radius:8px;"><div class="nav-icon" style="border:none;font-size:16px;">→|</div></div>
+    </div>
+    <div class="annotation" style="position:absolute;left:64px;top:10px;width:160px;">
+      ← Collapsed icon-only sidebar (desktop). Click rail or toggle to expand.
+    </div>
+  </div>
+
+  <div class="main-area">
+    <div class="topbar"><div class="search-box">Search patients, staff, records...</div><div class="topbar-right"><div class="icon-btn">?</div><div class="notif-btn icon-btn">🔔<div class="notif-dot"></div></div><div class="user-chip"><div class="avatar">AD</div><div class="user-info"><div class="user-name">Admin User</div></div></div></div></div>
+    <div class="kpi-strip" style="font-size:11px;padding:6px 20px;">
+      <div class="kpi-item"><div class="kpi-icon" style="font-size:14px;">👥</div><div><div class="kpi-label">Queue</div><div class="kpi-value" style="font-size:14px;">7</div></div></div>
+      <div class="kpi-item"><div class="kpi-icon" style="font-size:14px;">🩺</div><div><div class="kpi-label">Active Consults</div><div class="kpi-value" style="font-size:14px;">3</div></div></div>
+    </div>
+
+    <div class="content-scroll">
+      <!-- REUSABLE: ConsultationsPage from src/app/dashboard/consultations/page.tsx -->
+      <div style="position:relative;">
+        <span class="badge-reuse" style="position:absolute;top:-10px;left:0;font-family:Arial,sans-serif;">[REUSE] ConsultationsPage (minor style fixes)</span>
+        <div class="page-header" style="margin-top:14px;">
+          <div>
+            <div class="page-title" style="display:flex;align-items:center;gap:8px;"><span>🩺</span> Consultations</div>
+            <div class="page-subtitle">Active and scheduled patient consultations</div>
+          </div>
+          <button class="btn-primary">+ New Consultation</button>
+        </div>
+
+        <!-- Stats strip (3-col) -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;">
+          <div class="bento-card"><div class="card-label">Active Now</div><div class="card-value">2</div></div>
+          <div class="bento-card"><div class="card-label">Scheduled</div><div class="card-value">2</div></div>
+          <div class="bento-card"><div class="card-label">Completed</div><div class="card-value">3</div></div>
+        </div>
+
+        <!-- Filters row -->
+        <div style="display:flex;gap:10px;margin-bottom:10px;align-items:center;">
+          <div style="position:relative;flex:1;max-width:300px;">
+            <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;color:#aaa;">🔍</span>
+            <input type="text" placeholder="Search patient or doctor..." style="width:100%;padding:7px 12px 7px 30px;border:1.5px solid #ccc;border-radius:6px;font-size:12px;font-family:Arial,sans-serif;" />
+          </div>
+          <div style="display:flex;gap:4px;">
+            <button class="section-btn active">All</button>
+            <button class="section-btn">Active</button>
+            <button class="section-btn">Scheduled</button>
+            <button class="section-btn">Completed</button>
+          </div>
+        </div>
+
+        <!-- Consultation rows -->
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;align-items:center;gap:12px;background:#fff;border:1.5px solid #ccc;border-radius:8px;padding:10px 14px;">
+            <div style="width:4px;height:40px;background:#333;border-radius:2px;flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <div style="font-weight:bold;font-size:12px;">Amina Wanjiru <span style="font-weight:normal;color:#aaa;font-size:10px;">PID-10234 · 34F</span></div>
+              <div style="font-size:11px;color:#666;font-family:Arial,sans-serif;">Chest pain and palpitations</div>
+            </div>
+            <div style="text-align:right;font-size:11px;color:#888;font-family:Arial,sans-serif;">Dr. Otieno Mwangi<br>Cardiology</div>
+            <div style="text-align:center;font-size:11px;color:#888;font-family:Arial,sans-serif;">10:35 AM<br><span class="pill" style="font-size:9px;">Room 4B</span></div>
+            <span class="pill active">Active</span>
+            <span style="color:#bbb;">›</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;background:#fff;border:1.5px solid #ccc;border-radius:8px;padding:10px 14px;">
+            <div style="width:4px;height:40px;background:#ccc;border-radius:2px;flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <div style="font-weight:bold;font-size:12px;">James Ochieng <span style="font-weight:normal;color:#aaa;font-size:10px;">PID-10547 · 28M</span></div>
+              <div style="font-size:11px;color:#666;font-family:Arial,sans-serif;">Laceration wound assessment</div>
+            </div>
+            <div style="text-align:right;font-size:11px;color:#888;font-family:Arial,sans-serif;">Dr. Wambui Kariuki<br>General Surgery</div>
+            <span class="pill">Scheduled</span>
+            <span style="color:#bbb;">›</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 3 — SETTINGS PAGE (design token fix)
+══════════════════════════════════════════════════ -->
+<div style="padding:16px 20px 4px; background:#f0f0f0;margin-top:24px;">
+  <div class="section-divider">▶ SECTION 3 — SETTINGS PAGE (token consistency fix)</div>
+</div>
+
+<div class="app-shell" style="height:520px;min-height:520px;">
+  <div class="sidebar" style="width:56px;min-width:56px;align-items:center;padding:12px 0;">
+    <div class="logo-box" style="margin:8px 0 16px;">✚</div>
+    <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
+      <div class="nav-item" style="width:40px;height:40px;padding:0;justify-content:center;border-radius:8px;">⊞</div>
+      <div class="nav-item" style="width:40px;height:40px;padding:0;justify-content:center;border-radius:8px;">⚙</div>
+    </div>
+  </div>
+
+  <div class="main-area">
+    <div class="topbar"><div class="search-box">Search...</div></div>
+
+    <div class="content-scroll">
+      <!-- REUSABLE: SettingsLayout from src/app/dashboard/settings/layout.tsx (with token fix) -->
+      <div style="position:relative;">
+        <span class="badge-fix" style="position:absolute;top:-10px;left:0;font-family:Arial,sans-serif;">[FIX] SettingsLayout — replace slate-* Tailwind builtins with custom tokens</span>
+      </div>
+
+      <div class="page-header" style="margin-top:14px;">
+        <div>
+          <div class="page-title">Settings</div>
+          <div class="page-subtitle">Manage hospital configuration, team, and integrations</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:20px;margin-top:6px;">
+        <!-- Settings nav -->
+        <div style="width:220px;flex-shrink:0;">
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid #bbb;border-radius:8px;background:#f5f5f5;">
+              <div style="width:32px;height:32px;border:1.5px solid #bbb;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;">👤</div>
+              <div><div style="font-size:12px;font-weight:bold;">Hospital Profile</div><div style="font-size:10px;color:#999;font-family:Arial,sans-serif;">Basic info, branding</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid transparent;border-radius:8px;">
+              <div style="width:32px;height:32px;border:1.5px solid #ddd;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;">👥</div>
+              <div><div style="font-size:12px;color:#666;">Staff & Roles</div><div style="font-size:10px;color:#bbb;font-family:Arial,sans-serif;">Team permissions</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid transparent;border-radius:8px;">
+              <div style="width:32px;height:32px;border:1.5px solid #ddd;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;">🧠</div>
+              <div><div style="font-size:12px;color:#666;">AI Configuration</div><div style="font-size:10px;color:#bbb;font-family:Arial,sans-serif;">AfyaAI models</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid transparent;border-radius:8px;">
+              <div style="width:32px;height:32px;border:1.5px solid #ddd;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;">🔌</div>
+              <div><div style="font-size:12px;color:#666;">Integrations</div><div style="font-size:10px;color:#bbb;font-family:Arial,sans-serif;">M-Pesa, USSD, EHR</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings content -->
+        <div style="flex:1;">
+          <!-- REUSABLE: ProfileSettingsPage from src/app/dashboard/settings/profile/page.tsx (token fix) -->
+          <div style="position:relative;">
+            <span class="badge-fix" style="position:absolute;top:-10px;right:0;font-family:Arial,sans-serif;">[FIX] Profile — use content-border/content-surface tokens, not slate-*</span>
+            <div class="panel" style="margin-top:14px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <div><div style="font-size:14px;font-weight:bold;">Hospital Profile</div><div style="font-size:11px;color:#888;font-family:Arial,sans-serif;">Public information about your facility</div></div>
+                <button class="btn-primary">💾 Save Changes</button>
+              </div>
+              <div style="display:flex;gap:16px;margin-bottom:14px;">
+                <div style="width:80px;height:80px;border:2px dashed #bbb;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">🏥</div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+                  <div><div style="font-size:10px;text-transform:uppercase;color:#aaa;font-family:Arial,sans-serif;letter-spacing:0.08em;">Hospital Name</div><input type="text" value="Nairobi General Hospital" style="width:100%;padding:8px 12px;border:1.5px solid #ccc;border-radius:6px;margin-top:4px;font-size:12px;font-family:Arial,sans-serif;" /></div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                    <div><div style="font-size:10px;text-transform:uppercase;color:#aaa;font-family:Arial,sans-serif;">Facility Type</div><select style="width:100%;padding:8px 12px;border:1.5px solid #ccc;border-radius:6px;margin-top:4px;font-size:12px;font-family:Arial,sans-serif;"><option>Level 5 - National Referral</option></select></div>
+                    <div><div style="font-size:10px;text-transform:uppercase;color:#aaa;font-family:Arial,sans-serif;">Registration No.</div><input type="text" value="KMPDB/H/2024/0456" style="width:100%;padding:8px 12px;border:1.5px solid #ccc;border-radius:6px;margin-top:4px;font-size:12px;font-family:Arial,sans-serif;" /></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 4 — MOBILE VIEW
+══════════════════════════════════════════════════ -->
+<div style="padding:16px 20px 4px; background:#f0f0f0;margin-top:24px;">
+  <div class="section-divider">▶ SECTION 4 — MOBILE (375px) — Responsive Sidebar Fix</div>
+</div>
+
+<div style="display:flex;gap:24px;padding:16px 20px 24px;background:#f0f0f0;">
+
+  <!-- Mobile closed state -->
+  <div style="width:375px;border:2px solid #999;border-radius:8px;background:#fff;overflow:hidden;">
+    <div style="background:#333;color:#fff;padding:6px 10px;font-size:11px;font-family:Arial,sans-serif;text-align:center;">Mobile · Sidebar CLOSED</div>
+    <!-- topbar -->
+    <div style="height:48px;border-bottom:1.5px solid #ddd;display:flex;align-items:center;padding:0 12px;gap:8px;background:#fff;">
+      <div class="icon-btn" style="border-color:#999;">☰</div>
+      <div class="search-box" style="flex:1;max-width:none;padding:6px 10px;font-size:11px;">Search...</div>
+      <div class="notif-btn icon-btn">🔔<div class="notif-dot"></div></div>
+      <div class="avatar">AD</div>
+    </div>
+    <!-- kpi -->
+    <div style="padding:8px 12px;border-bottom:1px solid #eee;display:flex;gap:16px;flex-wrap:wrap;">
+      <div style="font-size:11px;font-family:Arial,sans-serif;"><span style="color:#aaa;">Queue</span><br><strong>7</strong></div>
+      <div style="font-size:11px;font-family:Arial,sans-serif;"><span style="color:#aaa;">Consults</span><br><strong>3</strong></div>
+      <div style="font-size:11px;font-family:Arial,sans-serif;"><span style="color:#aaa;">Beds</span><br><strong>22</strong></div>
+    </div>
+    <!-- content -->
+    <div style="padding:12px;">
+      <div style="font-size:14px;font-weight:bold;margin-bottom:8px;">Hospital Overview</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div class="bento-card"><div class="card-label" style="font-size:9px;">Patients</div><div class="card-value" style="font-size:20px;">248</div></div>
+        <div class="bento-card"><div class="card-label" style="font-size:9px;">Staff</div><div class="card-value" style="font-size:20px;">34</div></div>
+        <div class="bento-card"><div class="card-label" style="font-size:9px;">Bed Occ.</div><div class="card-value" style="font-size:20px;">64%</div></div>
+        <div class="bento-card"><div class="card-label" style="font-size:9px;">Wait</div><div class="card-value" style="font-size:20px;">14m</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile open sidebar state -->
+  <div style="width:375px;border:2px solid #999;border-radius:8px;background:#fff;overflow:hidden;position:relative;">
+    <div style="background:#333;color:#fff;padding:6px 10px;font-size:11px;font-family:Arial,sans-serif;text-align:center;">Mobile · Sidebar OPEN (overlay)</div>
+    <!-- overlay -->
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,0.4);z-index:10;top:25px;"></div>
+    <!-- sidebar drawer -->
+    <div style="position:absolute;top:25px;left:0;width:240px;bottom:0;background:#fff;border-right:2px solid #ccc;z-index:20;padding:12px 0;">
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid #eee;">
+        <div class="logo-box">✚</div>
+        <span style="font-weight:bold;font-size:13px;">AfyaHero</span>
+        <span style="margin-left:auto;cursor:pointer;color:#888;font-size:18px;">✕</span>
+      </div>
+      <div class="nav-item active" style="margin:8px;"><div class="nav-icon">⊞</div> Dashboard</div>
+      <div class="nav-item" style="margin:8px;"><div class="nav-icon">☰</div> Patient Queue</div>
+      <div class="nav-item" style="margin:8px;"><div class="nav-icon">✚</div> Consultations</div>
+      <div class="nav-item" style="margin:8px;"><div class="nav-icon">📅</div> Appointments</div>
+    </div>
+    <!-- blurred content behind overlay -->
+    <div style="padding:48px 12px 12px;filter:blur(2px);">
+      <div style="font-size:14px;font-weight:bold;">Hospital Overview</div>
+    </div>
+    <!-- NEW annotation -->
+    <span class="badge-new" style="position:absolute;bottom:8px;right:8px;font-family:Arial,sans-serif;z-index:30;">[NEW] Mobile overlay pattern</span>
+  </div>
+
+  <!-- Annotation column -->
+  <div style="width:200px;font-family:Arial,sans-serif;font-size:12px;color:#555;line-height:1.7;">
+    <strong>Mobile fixes needed:</strong>
+    <ul style="padding-left:14px;margin-top:4px;">
+      <li>Hamburger in Header must toggle sidebar state</li>
+      <li>Sidebar becomes full-width overlay on mobile</li>
+      <li>Click outside (backdrop) to close</li>
+      <li>KPI strip wraps to 2×2 on small screens</li>
+      <li>Settings sidebar becomes top tab bar on mobile</li>
+      <li>Teleconsult: replace inline styles with Tailwind</li>
+    </ul>
+  </div>
+
+</div>
+
+</body>
+</html>

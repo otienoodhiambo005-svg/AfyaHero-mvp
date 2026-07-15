@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+          NEXT_PUBLIC_HEALTH_EDU_REGION: KE
+
+      - name: Strict fallback guard - TypeScript check
+        run: npx tsc --noEmit
+        env:
+          ALLOW_MOCK_FALLBACKS: "false"
+
+      - name: Strict fallback guard - Build
+        run: npm run build
+        env:
+          ALLOW_MOCK_FALLBACKS: "false"
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+          NEXT_PUBLIC_HEALTH_EDU_REGION: KE
+
+      - name: Strict fallback guard - Degradation contracts
+        run: npm run test:strict-degradation
+        env:
+          ALLOW_MOCK_FALLBACKS: "false"

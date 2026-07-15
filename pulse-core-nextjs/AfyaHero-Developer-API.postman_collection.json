@@ -1,0 +1,157 @@
+{
+  "info": {
+    "name": "AfyaHero Hospital OS Developer API",
+    "_postman_id": "e8d6c184-8136-4fe5-a647-9346e8e8428e",
+    "description": "Onboarding collection for AfyaHero developer app authentication and FHIR API access.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1) Verify Developer Auth",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-afyahero-app-id",
+            "value": "{{appId}}"
+          },
+          {
+            "key": "x-afyahero-app-key",
+            "value": "{{appKey}}"
+          },
+          {
+            "key": "x-afyahero-timestamp",
+            "value": "{{timestampMs}}"
+          },
+          {
+            "key": "x-afyahero-signature",
+            "value": "{{signature}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/developer/auth/verify",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "developer",
+            "auth",
+            "verify"
+          ]
+        },
+        "description": "Validates app credentials and signature formatting."
+      }
+    },
+    {
+      "name": "2) FHIR Patient Search (Read)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-afyahero-app-id",
+            "value": "{{appId}}"
+          },
+          {
+            "key": "x-afyahero-app-key",
+            "value": "{{appKey}}"
+          },
+          {
+            "key": "x-afyahero-timestamp",
+            "value": "{{timestampMs}}"
+          },
+          {
+            "key": "x-afyahero-signature",
+            "value": "{{signature}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/fhir/Patient?_count=20",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "fhir",
+            "Patient"
+          ],
+          "query": [
+            {
+              "key": "_count",
+              "value": "20"
+            }
+          ]
+        },
+        "description": "FHIR read scope required."
+      }
+    },
+    {
+      "name": "3) FHIR Observation Create (Write)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/fhir+json"
+          },
+          {
+            "key": "x-afyahero-app-id",
+            "value": "{{appId}}"
+          },
+          {
+            "key": "x-afyahero-app-key",
+            "value": "{{appKey}}"
+          },
+          {
+            "key": "x-afyahero-timestamp",
+            "value": "{{timestampMs}}"
+          },
+          {
+            "key": "x-afyahero-signature",
+            "value": "{{signature}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"resourceType\": \"Observation\",\n  \"status\": \"final\",\n  \"code\": {\n    \"coding\": [\n      {\n        \"system\": \"http://loinc.org\",\n        \"code\": \"8867-4\",\n        \"display\": \"Heart rate\"\n      }\n    ]\n  },\n  \"subject\": {\n    \"reference\": \"Patient/{{patientId}}\"\n  },\n  \"effectiveDateTime\": \"{{isoNow}}\",\n  \"valueQuantity\": {\n    \"value\": 72,\n    \"unit\": \"beats/minute\",\n    \"system\": \"http://unitsofmeasure.org\",\n    \"code\": \"8867-4\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/fhir/Observation",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "fhir",
+            "Observation"
+          ]
+        },
+        "description": "FHIR write scope required."
+      }
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const secret = pm.environment.get('signingSecret');",
+          "const method = pm.request.method.toUpperCase();",
+          "const path = '/' + pm.request.url.path.join('/');",
+          "const query = pm.request.url.query && pm.request.url.query.count() > 0",
+          "  ? '?' + pm.request.url.query.toString()",
+          "  : '';",
+          "const pathAndQuery = path + query;",
+          "const timestampMs = Date.now().toString();",
+          "const payload = `${method}\\n${pathAndQuery}\\n${timestampMs}`;",
+          "const signature = CryptoJS.HmacSHA256(payload, secret).toString(CryptoJS.enc.Hex);",
+          "",
+          "pm.environment.set('timestampMs', timestampMs);",
+          "pm.environment.set('signature', signature);",
+          "pm.environment.set('isoNow', new Date().toISOString());"
+        ]
+      }
+    }
+  ]
+}

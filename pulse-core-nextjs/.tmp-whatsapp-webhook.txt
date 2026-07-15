@@ -1,0 +1,51 @@
+FAIL src/app/api/bot/whatsapp/webhook/__tests__/webhook.test.ts
+  /api/bot/whatsapp/webhook
+    POST
+      ΓêÜ should process incoming WhatsApp message successfully (17 ms)
+      ΓêÜ should verify webhook signature (3 ms)
+      ├ù should return 401 for invalid signature (4 ms)
+      ΓêÜ should handle processing errors gracefully (3 ms)
+      ├ù should handle invalid JSON payload (3 ms)
+    GET
+      ΓêÜ should return active status for webhook verification (2 ms)
+
+  ΓùÅ /api/bot/whatsapp/webhook ΓÇ║ POST ΓÇ║ should return 401 for invalid signature
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 401
+    Received: 500
+
+      112 |       const data = await response.json();
+      113 |
+    > 114 |       expect(response.status).toBe(401);
+          |                               ^
+      115 |       expect(data.error).toBe('Invalid signature');
+      116 |     });
+      117 |
+
+      at Object.toBe (src/app/api/bot/whatsapp/webhook/__tests__/webhook.test.ts:114:31)
+
+  ΓùÅ /api/bot/whatsapp/webhook ΓÇ║ POST ΓÇ║ should handle invalid JSON payload
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 400
+    Received: 500
+
+      146 |       const response = await POST(request);
+      147 |
+    > 148 |       expect(response.status).toBe(400);
+          |                               ^
+      149 |     });
+      150 |   });
+      151 |
+
+      at Object.toBe (src/app/api/bot/whatsapp/webhook/__tests__/webhook.test.ts:148:31)
+
+Test Suites: 1 failed, 1 total
+Tests:       2 failed, 4 passed, 6 total
+Snapshots:   0 total
+Time:        2.119 s
+Ran all test suites matching /src\\app\\api\\bot\\whatsapp\\webhook\\__tests__\\webhook.test.ts/i.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

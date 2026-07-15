@@ -1,0 +1,1149 @@
+/**
+ * AfyaHero Consolidated Database Schema
+ * 
+ * This schema consolidates all tables from:
+ * - schema.sql (main application)
+ * - schema-v2.sql (extended features)
+ * - schema-compat.sql (compatibility patches)
+ * 
+ * Generated: April 7, 2026
+ * Target: PostgreSQL on Google Cloud SQL
+ */
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/@prisma/client/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Core Models ─────────────────────────────────────────────────────────────
+
+/// Hospital/Facility
+model Hospital {
+  id                   String   @id @default(uuid()) @db.Uuid
+  name                 String
+  specialisation       String?
+  location             String?
+  licenseNumber        String?  @unique @map("license_number")
+  email                String?
+  acceptedInsurances   String[] @default([]) @map("accepted_insurances")
+  phoneNumber          String?  @map("phone_number")
+  address              String?
+  timezone             String?  @default("Africa/Nairobi")
+  isActive             Boolean  @default(true) @map("is_active")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  profiles             Profile[]
+  patients             Patient[]
+  appointments         Appointment[]
+  labRequests          LabRequest[]
+  labQualityIncidents  LabQualityIncident[]
+  prescriptions        Prescription[]
+  pharmacyInventory    PharmacyInventory[]
+  labInventory         LabInventory[]
+  clinicalVitals       ClinicalVital[]
+  consultations        Consultation[]
+  hospitalQueue        HospitalQueue[]
+  receptionCheckins    ReceptionCheckin[]
+  receptionRoutingOrders ReceptionRoutingOrder[]
+  handoverNotes        HandoverNote[]
+  hospitalBeds         HospitalBed[]
+  teleconsultAppointments TeleconsultAppointment[]
+  teleconsultWaitrooms    TeleconsultWaitroom[]
+  auditLogs            AuditLog[]
+  healthNewsFeedSources HealthNewsFeedSource[]
+  specialtyForms       SpecialtyForm[]
+  paymentTransactions  PaymentTransaction[]
+  shifClaims           ShifClaim[]
+  invoices             Invoice[]
+  dataBreachLogs       DataBreachLog[]
+  securityControls     SecurityControl[]
+  riskAssessments      RiskAssessment[]
+  securityIncidents    SecurityIncident[]
+  healthDataExchanges  HealthDataExchange[]
+  dataProtectionImpactAssessments DataProtectionImpactAssessment[]
+  serviceEscalations     ServiceEscalation[]
+  staffInvitations       StaffInvitation[]
+  userSettings          UserSettings[]
+
+  @@map("hospitals")
+}
+
+/// User Profile (Staff Member)
+model Profile {
+  id                   String   @id @default(uuid()) @db.Uuid
+  email                String   @unique
+  fullName             String   @map("full_name")
+  title                String?
+  role                 String   // 'reception', 'medical', 'lab', 'pharmacy', 'admin'
+  department           String?
+  staffId              String?  @map("staff_id")
+  hospitalCode         String?  @map("hospital_code")
+  hospitalId           String?  @db.Uuid @map("hospital_id")
+  phone                String?
+  avatarUrl            String?  @map("avatar_url")
+  status               String   @default("pending") // 'pending', 'active', 'suspended', 'rejected'
+  approvedBy           String?  @db.Uuid @map("approved_by")
+  approvedAt           DateTime? @map("approved_at")
+  lastLogin            DateTime? @map("last_login")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  hospital             Hospital? @relation(fields: [hospitalId], references: [id])
+  
+  // Staff activities
+  prescribedBy         Prescription[] @relation("PrescribedBy")
+  dispensedBy          Prescription[] @relation("DispensedBy")
+  orderedLabs          LabRequest[] @relation("OrderedBy")
+  verifiedLabs         LabRequest[] @relation("VerifiedBy")
+  recordedVitals       ClinicalVital[]
+  consultations        Consultation[]
+  checkins             ReceptionCheckin[]
+  assignedQueueItems   HospitalQueue[]
+  fromHandovers        HandoverNote[] @relation("FromStaff")
+  toHandovers          HandoverNote[] @relation("ToStaff")
+  acknowledgedRoutingOrders ReceptionRoutingOrder[] @relation("RoutingAcknowledgedBy")
+  escalationsCreated       ServiceEscalation[] @relation("EscalationCreatedBy")
+  escalationsResolved      ServiceEscalation[] @relation("EscalationResolvedBy")
+  userSettings             UserSettings[]
+
+  @@map("profiles")
+}
+
+/// Staff Invitation (Onboarding)
+model StaffInvitation {
+  id           String    @id @default(uuid()) @db.Uuid
+  token        String    @unique
+  hospitalId   String    @db.Uuid @map("hospital_id")
+  role         String    // 'medical', 'reception', 'lab', 'pharmacy', 'admin'
+  department   String?
+  expiresAt    DateTime  @map("expires_at")
+  usedAt       DateTime? @map("used_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  hospital     Hospital  @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@map("staff_invitations")
+}
+
+/// Demo Invitation (Superadmin-issued showcase session)
+/// Tracks a time-bound, revocable demo token used to showcase AfyaHero
+/// to prospective hospitals. The signed session token itself is not stored —
+/// only its hash, so it cannot be retrieved server-side once issued.
+model DemoInvitation {
+  id              String    @id @default(uuid()) @db.Uuid
+  /// SHA-256 hash of the signed session token (never store the raw token).
+  tokenHash       String    @unique @map("token_hash")
+  /// Portal role being showcased: 'reception' | 'medical' | 'lab' | 'pharmacy' | 'admin'.
+  portalRole      String    @map("portal_role")
+  hospitalName    String    @map("hospital_name")
+  prospectEmail   String?   @map("prospect_email")
+  prospectName    String?   @map("prospect_name")
+  notes           String?
+  /// Profile UUID of the issuing superadmin.
+  createdById     String    @db.Uuid @map("created_by_id")
+  expiresAt       DateTime  @map("expires_at")
+  /// Timestamp of the first time the token was redeemed (cookie issued).
+  firstUsedAt     DateTime? @map("first_used_at")
+  /// Timestamp of the most recent redemption.
+  lastUsedAt      DateTime? @map("last_used_at")
+  /// Number of times the token has been redeemed.
+  useCount        Int       @default(0) @map("use_count")
+  /// Set when an admin manually disables the demo before its natural expiry.
+  revokedAt       DateTime? @map("revoked_at")
+  revokedById     String?   @db.Uuid @map("revoked_by_id")
+  revokedReason   String?   @map("revoked_reason")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([tokenHash])
+  @@index([createdById])
+  @@index([expiresAt])
+  @@index([revokedAt])
+  @@map("demo_invitations")
+}
+
+/// User Settings (Portal-specific configuration)
+model UserSettings {
+  id           String   @id @default(uuid()) @db.Uuid
+  profileId    String   @map("profile_id")
+  role         String   // 'doctor', 'pharmacy', 'laboratory', 'admin', 'superadmin', 'reception'
+  settings     Json     @default("{}")
+  hospitalId   String?  @db.Uuid @map("hospital_id")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  profile      Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  hospital     Hospital? @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, role])
+  @@index([profileId])
+  @@map("user_settings")
+}
+
+/// Patient
+model Patient {
+  id                   String   @id @default(uuid()) @db.Uuid
+  userId               String?  @db.Uuid @map("user_id") // Linked to auth user
+  hospitalId           String?  @db.Uuid @map("hospital_id")
+  name                 String
+  gender               String?  // 'M', 'F', 'Other'
+  dob                  DateTime @map("dob")
+  idNumber             String?  @unique @map("id_number")
+  phone                String?
+  insuranceProvider    String?  @map("insurance_provider")
+  insuranceId          String?  @map("insurance_id")
+  shifNumber           String?  @map("shif_number")
+  status               String   @default("Stable")
+  bloodGroup           String?  @map("blood_group")
+  allergies            String[] @default([])
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  hospital             Hospital? @relation(fields: [hospitalId], references: [id])
+  
+  appointments         Appointment[]
+  labRequests          LabRequest[]
+  prescriptions        Prescription[]
+  clinicalVitals       ClinicalVital[]
+  consultations        Consultation[]
+  hospitalQueue        HospitalQueue[]
+  receptionCheckins    ReceptionCheckin[]
+  hospitalBeds         HospitalBed[]
+  paymentTransactions  PaymentTransaction[]
+  shifClaims           ShifClaim[]
+  invoices             Invoice[]
+  dataConsents         DataConsent[]
+  dataAccessRequests   DataAccessRequest[]
+  reminders            Reminder[]
+  botMessages          BotMessage[]
+  medicationReminders  MedicationReminder[]
+  medicationAdherence  MedicationAdherence[]
+
+  @@map("patients")
+}
+
+// ─── Clinical Models ─────────────────────────────────────────────────────────
+
+/// Appointment
+model Appointment {
+  id                   String   @id @default(uuid()) @db.Uuid
+  hospitalId           String   @db.Uuid @map("hospital_id")
+  patientId            String   @db.Uuid @map("patient_id")
+  practitionerId       String?  @db.Uuid @map("practitioner_id")
+  appointmentDate      DateTime @map("appointment_date")
+  scheduledAt          DateTime? @map("scheduled_at")
+  type                 String?
+  status               String   @default("Pending") // 'Confirmed', 'Pending', 'Cancelled', 'Completed'
+  notes                String?
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  // Relations
+  hospital             Hospital @relation(fields: [hospitalId], references: [id])
+  patient              Patient @relation(fields: [patientId], references: [id])
+
+  @@map("appointments")
+}
+
+/// Lab Request
+model LabRequest {
+  id                   String   @id @default(uuid()) @db.Uuid
+  hospitalId           String   @db.Uuid @map("hospital_id")
+  labId                String   @map("lab_id") // e.g., LAB-2024-001
+  patientId            String   @db.Uuid @map("patient_id")
+  orderedBy            String   @db.Uuid @map("ordered_by")
+  testName             String   @map("test_name")
+  panel                String?
+  sampleType           String?  @map("sample_type")
+  priority             String   @default("routine") // 'routine', 'urgent', 'STAT'
+  status               String   @default("ordered") // 'ordered', 'sample-collected', 'processing', 'completed', 'verified', 'rejected'
+  orderedAt            DateTime @default(now()) @map("ordered_at")
+  collectedAt          DateTime? @map("collected_at")
+  completedAt          DateTime? @map("completed_at")
+  verifiedBy           String?  @db.Uuid @map("verified_by")
+  verifiedAt           DateTime? @map("verified_at")
+  results              Json?    @default("[]")
+  abnormal             Boolean  @default(false)
+  critical             Boolean  @default(false)
+  notes                String?
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  // Relations
+  hospital             Hospital @relation(fields: [hospitalId], references: [id])
+  patient              Patient @relation(fields: [patientId], references: [id])
+  orderedByProfile     Profile @relation("OrderedBy", fields: [orderedBy], references: [id])
+  verifiedByProfile    Profile? @relation("VerifiedBy", fields: [verifiedBy], references: [id])
+
+  @@index([hospitalId, orderedAt(desc)])
+  @@map("lab_requests")
+}
+
+/// Lab quality / safety incident (hospital-scoped; lab portal workflow)
+model LabQualityIncident {
+  id          String   @id @default(uuid()) @db.Uuid
+  hospitalId  String   @db.Uuid @map("hospital_id")
+  displayId   String   @map("display_id")
+  issue       String
+  severity    String
+  status      String   @default("Open")
+  openedAt    DateTime @default(now()) @map("opened_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@unique([hospitalId, displayId])
+  @@index([hospitalId, openedAt(desc)])
+  @@map("lab_quality_incidents")
+}
+
+/// Prescription
+model Prescription {
+  id                   String   @id @default(uuid()) @db.Uuid
+  hospitalId           String   @db.Uuid @map("hospital_id")
+  rxNumber             String   @map("rx_number") // e.g., RX-2024-001
+  patientId            String   @db.Uuid @map("patient_id")
+  prescribedBy         String   @db.Uuid @map("prescribed_by")
+  prescribedAt         DateTime @default(now()) @map("prescribed_at")
+  status               String   @default("pending") // 'pending', 'dispensing', 'dispensed', 'partial', 'cancelled', 'on-hold'
+  items                Json     @default("[]")
+  notes                String?
+  insurance            String?
+  dispensedBy          String?  @db.Uuid @map("dispensed_by")
+  dispensedAt          DateTime? @map("dispensed_at")
+  priority             String   @default("normal") // 'normal', 'urgent', 'critical'
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  // Relations
+  hospital             Hospital @relation(fields: [hospitalId], references: [id])
+  patient              Patient @relation(fields: [patientId], references: [id])
+  prescribedByProfile  Profile @relation("PrescribedBy", fields: [prescribedBy], references: [id])
+  dispensedByProfile   Profile? @relation("DispensedBy", fields: [dispensedBy], references: [id])
+  medicationReminders  MedicationReminder[]
+  medicationAdherence  MedicationAdherence[]
+
+  @@index([hospitalId, prescribedAt(desc)])
+  @@map("prescriptions")
+}
+
+/// Clinical Vitals
+model ClinicalVital {
+  id                   String   @id @default(uuid()) @db.Uuid
+  hospitalId           String   @db.Uuid @map("hospital_id")
+  patientId            String   @db.Uuid @map("patient_id")
+  recordedBy           String?  @db.Uuid @map("recorded_by")
+  tempC                Decimal? @map("temp_c") // Temperature in Celsius
+  bloodPressure        String?  @map("blood_pressure")
+  heartRate            Int?     @map("heart_rate")
+  respRate             Int?     @map("resp_rate")
+  spo2                 Int?     @map("spo2")
+  weight               Decimal? // kg
+  height               Decimal? // cm
+  bmi                  Decimal?
+  recordedAt           DateTime @default(now()) @map("recorded_at")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  // Relations
+  hospital             Hospital @relation(fields: [hospitalId], references: [id])
+  patient              Patient @relation(fields: [patientId], references: [id])
+  recordedByProfile    Profile? @relation(fields: [recordedBy], references: [id])
+
+  @@map("clinical_vitals")
+}
+
+/// Consultation
+model Consultation {
+  id                   String   @id @default(uuid()) @db.Uuid
+  hospitalId           String   @db.Uuid @map("hospital_id")
+  patientId            String   @db.Uuid @map("patient_id")
+  practitionerId       String   @db.Uuid @map("practitioner_id")
+  notes                String?
+  diagnosis            String?
+  prescriptionId       String?  @db.Uuid @map("prescription_id")
+  status               String   @default("Completed")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  // Relations
+  hospital             Hospital @relation(fields: [hospitalId], references: [id])
+  patient              Patient @relation(fields: [patientId], references: [id])
+  practitioner         Profile @relation(fields: [practitionerId], references: [id])
+
+  @@map("consultations")
+}
+
+// ─── Pharmacy & Inventory Models ─────────────────────────────────────────────
+
+/// Pharmacy Inventory
+model PharmacyInventory {
+  id                   String   @id @default(uuid()) @db.Uuid
+  hospitalId           String   @db.Uuid @map("hospital_id")
+  medicationName       String   @map("medication_name")
+  genericName          String?  @map("generic_name")
+  category             String?
+  stockQuantity        Int      @default(0) @map("stock_quantity")
+  unit                 String?
+  unitPrice            Decimal? @map("unit_price")
+  expiryDate           DateTime? @map("expiry_date")
+  lotNumber            String?  @map("lot_number")
+  supplier             String?
+  location             String?
+  minStockLevel        Int?     @map("min_stock_level")
+  maxStockLevel        Int?     @map("max_stock_level")
+  status               String   @default("adequate") // 'adequate', 'low', 'critical', 'out-of-stock', 'expiring-soon'
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  hospital             Hospital @relation(fields: [hospitalId], references: [id])
+
+  @@map("pharmacy_inventory")
+}
+
+/// Lab Inventory
+model LabInventory {
+  id                   String   @id @default(uuid()) @db.Uuid
+  hospitalId           String   @db.Uuid @map("hospital_id")
+  name                 String
+  stockQuantity        Int      @default(0) @map("stock_quantity")
+  unit                 String?
+  minStockLevel        Int?     @default(10) @map("min_stock_level")
+  storageTemp          String?  @map("storage_temp")
+  status               String   @default("Optimal")
+  expiryDate           DateTime? @map("expiry_date")
+  lotNumber            String?  @map("lot_number")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  hospital             Hospital @relation(fields: [hospitalId], references: [id])
+
+  @@map("lab_inventory")
+}
+
+// ─── Queue & Reception Models ────────────────────────────────────────────────
+
+/// Hospital Queue
+model HospitalQueue {
+  id                   String   @id @default(uuid()) @db.Uuid
+  hospitalId           String   @db.Uuid @map("hospital_id")
+  checkinId            String?  @db.Uuid @map("checkin_id")
+  patientId            String?  @db.Uuid @map("patient_id")
+  patientName          String   @map("patient_name")
+  tokenNumber          Int      @map("token_number")
+  ticketNumber         String?  @map("ticket_number")
+  serviceType          String   @default("OPD") @map("service_type")
+  priority             String   @default("normal") // 'normal', 'urgent', 'critical'
+  triageSeverity       String?  @map("triage_severity") // 'high', 'medium', 'low'
+  chiefComplaint       String?  @map("chief_complaint")
+  status               String   @default("waiting") // 'waiting', 'in_progress', 'completed', 'cancelled', 'transferred'
+  calledAt             DateTime? @map("called_at")
+  completedAt          DateTime? @map("completed_at")
+  assignedTo           String?  @db.Uuid @map("assigned_to")
+  room                 String?
+  waitMinutes          Int      @default(0) @map("wait_minutes")
+  arrivedAt            DateTime? @default(now()) @map("arrived_at")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  // Relations
+  hospital             Hospital @relation(fields: [hospitalId], references: [id])
+  patient              Patient? @relation(fields: [patientId], references: [id])
+  assignedToProfile    Profile? @relation(fields: [assignedTo], references: [id])
+
+  @@map("hospital_queue")
+}
+
+/// Reception Check-in
+model ReceptionCheckin {
+  id                   String   @id @default(uuid()) @db.Uuid
+  hospitalId           String   @db.Uuid @map("hospital_id")
+  patientId            String?  @db.Uuid @map("patient_id")
+  patientName          String   @map("patient_name")
+  phone                String?
+  idNumber             String?  @map("id_number")
+  insuranceProvider    String?  @map("insurance_provider")
+  insuranceId          String?  @map("insurance_id")
+  visitReason          String?  @map("visit_reason")
+  visitType            String   @default("OPD") @map("visit_type") // 'OPD', 'Emergency', 'Scheduled', 'Follow-up', 'Lab Only', 'Pharmacy Only'
+  paymentMethod        String   @default("Cash") @map("payment_method") // 'Cash', 'Insurance', 'SHIF', 'Credit', 'Waiver'
+  tokenNumber          Int?     @map("token_number")
+  chiefComplaint       String?  @map("chief_complaint")
+  priority             String?  @default("normal")
+  checkedInBy          String?  @db.Uuid @map("checked_in_by")
+  checkedInAt          DateTime @default(now()) @map("checked_in_at")
+  checkedOutAt         DateTime? @map("checked_out_at")
+  status               String   @default("Checked In") @map("status") // 'Checked In', 'In Queue', 'In Consultation', 'Checked Out', 'No Show'
+  notes                String?
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  hospital             Hospital @relation(fields: [hospitalId], references: [id])
+  patient              Patient? @relation(fields: [patientId], references: [id])
+  checkedInByProfile   Profile? @relation(fields: [checkedInBy], references: [id])
+
+  @@map("reception_checkins")
+}
+
+/// Department routing slip created at reception (cross-department handoff).
+model ReceptionRoutingOrder {
+  id                 String    @id @default(uuid()) @db.Uuid
+  hospitalId         String    @db.Uuid @map("hospital_id")
+  orderRef           String    @map("order_ref")
+  patientName        String    @map("patient_name")
+  patientRef         String    @map("patient_ref")
+  destination        String
+  reason             String
+  urgency            String
+  status             String    @default("Pending")
+  acknowledgedBy     String?   @db.Uuid @map("acknowledged_by")
+  acknowledgedAt     DateTime? @map("acknowledged_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  hospital               Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  acknowledgedByProfile  Profile? @relation("RoutingAcknowledgedBy", fields: [acknowledgedBy], references: [id])
+
+  @@unique([hospitalId, orderRef])
+  @@index([hospitalId, status])
+  @@map("reception_routing_orders")
+}
+
+// ─── Handover & Shift Models ─────────────────────────────────────────────────
+
+/// Handover Notes
+model HandoverNote {
+  id                   String   @id @default(uuid()) @db.Uuid
+  hospitalId           String   @db.Uuid @map("hospital_id")
+  shiftDate            DateTime @default(dbgenerated("CURRENT_DATE")) @map("shift_date")
+  shiftType            String   @map("shift_type") // 'Morning', 'Afternoon', 'Night'
+  handingOverStaffId   String?  @db.Uuid @map("handing_over_staff_id")
+  receivingStaffId     String?  @db.Uuid @map("receiving_staff_id")
+  handingOverName      String?  @map("handing_over_name")
+  receivingName        String?  @map("receiving_name")
+  department           String?
+  summary              String?
+  pendingActions       Json?    @default("[]") @map("pending_actions")
+  criticalPatients     Json?    @default("[]") @map("critical_patients")
+  medicationsDue       Json?    @default("[]") @map("medications_due")
+  generalNotes         String?  @map("general_notes")
+  aiSummary            String?  @map("ai_summary")
+  status               String   @default("draft") // 'draft', 'submitted', 'acknowledged'
+  submittedAt          DateTime? @map("submitted_at")
+  acknowledgedAt       DateTime? @map("acknowledged_at")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  // Relations
+  hospital             Hospital @relation(fields: [hospitalId], references: [id])
+  fromStaff            Profile? @relation("FromStaff", fields: [handingOverStaffId], references: [id])
+  toStaff              Profile? @relation("ToStaff", fields: [receivingStaffId], references: [id])
+
+  @@map("handover_notes")
+}
+
+// ─── Bed Management Models ───────────────────────────────────────────────────
+
+/// Hospital Beds
+model HospitalBed {
+  id                   String   @id @default(uuid()) @db.Uuid
+  hospitalId           String   @db.Uuid @map("hospital_id")
+  wardId               String?  @map("ward_id")
+  wardName             String   @default("General Ward") @map("ward_name")
+  bedNumber            String   @map("bed_number")
+  status               String   @default("available") // 'available', 'occupied', 'reserved', 'maintenance', 'cleaning'
+  patientId            String?  @db.Uuid @map("patient_id")
+  patientName          String?  @map("patient_name")
+  admittedAt           DateTime? @map("admitted_at")
+  expectedDischarge    DateTime? @map("expected_discharge")
+  notes                String?
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  hospital             Hospital @relation(fields: [hospitalId], references: [id])
+  patient              Patient? @relation(fields: [patientId], references: [id])
+
+  @@index([hospitalId])
+  @@index([hospitalId, wardId])
+  @@index([hospitalId, status])
+  @@map("hospital_beds")
+}
+
+// ─── Teleconsultation Models ─────────────────────────────────────────────────
+
+/// Teleconsultation Appointment
+model TeleconsultAppointment {
+  id                   String   @id @default(uuid()) @db.Uuid
+  hospitalId           String   @db.Uuid @map("hospital_id")
+  appointmentCode      String   @unique @map("appointment_code")
+  patientName          String   @map("patient_name")
+  appointmentTime      String   @map("appointment_time")
+  mode                 String   // 'Video', 'Call', 'Text'
+  clinicianName        String   @map("clinician_name")
+  status               String   @default("Scheduled") // 'Scheduled', 'Confirmed', 'In Progress', 'Completed'
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  hospital             Hospital @relation(fields: [hospitalId], references: [id])
+
+  @@map("teleconsult_appointments")
+}
+
+/// Teleconsultation Waitroom
+model TeleconsultWaitroom {
+  id                   String   @id @default(uuid()) @db.Uuid
+  hospitalId           String   @db.Uuid @map("hospital_id")
+  waitroomCode         String   @unique @map("waitroom_code")
+  patientName          String   @map("patient_name")
+  waitingFor           String   @map("waiting_for")
+  waitMinutes          Int      @default(0) @map("wait_minutes")
+  mode                 String   // 'Video', 'Call', 'Text'
+  priority             String   @default("Normal") // 'Normal', 'Urgent'
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  hospital             Hospital @relation(fields: [hospitalId], references: [id])
+
+  @@map("teleconsult_waitroom")
+}
+
+// ─── Health News Models ──────────────────────────────────────────────────────
+
+/// Health News Content
+model HealthNews {
+  id                   String   @id @default(uuid()) @db.Uuid
+  title                String
+  category             String
+  content              String?
+  mediaUrl             String?  @map("media_url")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  @@map("health_news")
+}
+
+/// Health News Feed Sources
+model HealthNewsFeedSource {
+  id                   String   @id @default(uuid()) @db.Uuid
+  name                 String
+  url                  String   @unique
+  role                 String   @default("all") // 'all', 'reception', 'medical', 'lab', 'pharmacy', 'admin'
+  regionCodes          String[] @default([]) @map("region_codes")
+  priority             Int      @default(70)
+  enabled              Boolean  @default(true)
+  createdBy            String?  @db.Uuid @map("created_by")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  hospital             Hospital? @relation(fields: [createdBy], references: [id])
+
+  @@map("health_news_feed_sources")
+}
+
+// ─── Specialty Forms ─────────────────────────────────────────────────────────
+
+/// Specialty Form Builder
+model SpecialtyForm {
+  id                   String   @id
+  specialty            String
+  name                 String
+  fields               Json     @default("[]")
+  createdBy            String?  @db.Uuid @map("created_by")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  hospital             Hospital? @relation(fields: [createdBy], references: [id])
+
+  @@index([specialty])
+  @@map("specialty_forms")
+}
+
+// ─── Reminder Models ─────────────────────────────────────────────────────────
+
+/// Patient Reminders
+model Reminder {
+  id                   String   @id @default(uuid()) @db.Uuid
+  userId               String   @db.Uuid @map("user_id")
+  type                 String   // 'Medication', 'Appointment', 'Exercise', 'Other'
+  title                String
+  reminderTime         DateTime @map("reminder_time")
+  isCompleted          Boolean  @default(false) @map("is_completed")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  // Relations
+  patient              Patient? @relation(fields: [userId], references: [id])
+
+  @@map("reminders")
+}
+
+/// Queue / service escalation notes for hospital ops (admin-visible, hospital-scoped).
+model ServiceEscalation {
+  id             String    @id @default(uuid()) @db.Uuid
+  hospitalId     String    @map("hospital_id") @db.Uuid
+  title          String
+  body           String    @db.Text
+  serviceArea    String?   @map("service_area")
+  status         String    @default("open") // 'open' | 'resolved'
+  createdById    String?   @map("created_by_id") @db.Uuid
+  resolvedById   String?   @map("resolved_by_id") @db.Uuid
+  resolvedAt     DateTime? @map("resolved_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  hospital       Hospital  @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  createdBy      Profile?  @relation("EscalationCreatedBy", fields: [createdById], references: [id])
+  resolvedBy     Profile?  @relation("EscalationResolvedBy", fields: [resolvedById], references: [id])
+
+  @@index([hospitalId, status, createdAt(desc)])
+  @@map("service_escalations")
+}
+
+// ─── Audit & Compliance Models ───────────────────────────────────────────────
+
+/// Audit Log
+model AuditLog {
+  id                   String   @id @default(uuid()) @db.Uuid
+  action               String
+  actorId              String?  @map("actor_id")
+  actorEmail           String?  @map("actor_email")
+  actorRole            String?  @map("actor_role")
+  hospitalId           String?  @db.Uuid @map("hospital_id")
+  resourceType         String?  @map("resource_type")
+  resourceId           String?  @map("resource_id")
+  detail               Json?
+  ipAddress            String?  @map("ip_address")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  // Relations
+  hospital             Hospital? @relation(fields: [hospitalId], references: [id])
+
+  @@index([action])
+  @@index([actorId])
+  @@index([resourceType, resourceId])
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
+
+model FacilityRegistration {
+  id              String    @id @default(uuid()) @db.Uuid
+  facilityName    String    @map("facility_name")
+  facilityType    String    @map("facility_type")
+  ownership       String
+  county          String
+  subCounty       String?   @map("sub_county")
+  physicalAddress String?   @map("physical_address")
+  phone           String
+  facilityEmail   String    @map("facility_email")
+  mflCode         String?   @map("mfl_code")
+  shifAccepted    Boolean   @default(false) @map("shif_accepted")
+  adminName       String    @map("admin_name")
+  adminTitle      String?   @map("admin_title")
+  adminEmail      String    @map("admin_email")
+  adminPhone      String?   @map("admin_phone")
+  adminUserId     String?   @map("admin_user_id")
+  services        String[]  @default([])
+  insurances      String[]  @default([])
+  bedCount        Int?      @map("bed_count")
+  operatingHours  String?   @map("operating_hours")
+  status          String    @default("pending")
+  reviewedBy      String?   @map("reviewed_by")
+  rejectReason    String?   @map("reject_reason")
+  submittedAt     DateTime  @default(now()) @map("submitted_at")
+  approvedAt      DateTime? @map("approved_at")
+  rejectedAt      DateTime? @map("rejected_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([status, submittedAt(sort: Desc)])
+  @@index([facilityEmail])
+  @@index([adminEmail])
+  @@map("facility_registrations")
+}
+
+model PaymentTransaction {
+  id                   String   @id @default(uuid()) @db.Uuid
+  hospitalId           String   @db.Uuid @map("hospital_id")
+  patientId            String?  @db.Uuid @map("patient_id")
+  reference            String   @unique
+  transactionId        String?  @map("transaction_id")
+  provider             String   // 'mpesa', 'pesapal', 'shif', 'insurance', 'cash'
+  amount               Decimal
+  currency             String   @default("KES")
+  status               String   @default("pending") // 'pending', 'completed', 'failed', 'refunded', 'cancelled'
+  description          String?
+  metadata             Json?
+  paidAt               DateTime? @map("paid_at")
+  refundedAt           DateTime? @map("refunded_at")
+  refundReason         String?  @map("refund_reason")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  hospital             Hospital @relation(fields: [hospitalId], references: [id])
+  patient              Patient? @relation(fields: [patientId], references: [id])
+
+  @@index([hospitalId, createdAt(desc)])
+  @@index([reference])
+  @@index([status])
+  @@map("payment_transactions")
+}
+
+/// SHIF Claim (Social Health Insurance Fund)
+model ShifClaim {
+  id                   String   @id @default(uuid()) @db.Uuid
+  hospitalId           String   @db.Uuid @map("hospital_id")
+  patientId            String   @db.Uuid @map("patient_id")
+  claimNumber          String   @unique @map("claim_number")
+  memberNumber         String   @map("member_number")
+  status               String   @default("pending") // 'pending', 'submitted', 'approved', 'rejected', 'paid'
+  preauthNumber        String?  @map("preauth_number")
+  preauthStatus        String?  @map("preauth_status")
+  diagnosis            String?
+  treatment            String?
+  amountClaimed        Decimal  @map("amount_claimed")
+  amountApproved       Decimal? @map("amount_approved")
+  rejectionReason      String?  @map("rejection_reason")
+  submittedAt          DateTime? @map("submitted_at")
+  decidedAt            DateTime? @map("decided_at")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  hospital             Hospital @relation(fields: [hospitalId], references: [id])
+  patient              Patient @relation(fields: [patientId], references: [id])
+
+  @@index([hospitalId, createdAt(desc)])
+  @@index([claimNumber])
+  @@index([memberNumber])
+  @@map("shif_claims")
+}
+
+/// Invoice/Bill
+model Invoice {
+  id                   String   @id @default(uuid()) @db.Uuid
+  hospitalId           String   @db.Uuid @map("hospital_id")
+  patientId            String?  @db.Uuid @map("patient_id")
+  invoiceNo            String   @map("invoice_no")
+  date                 DateTime @default(now())
+  items                Json     @default("[]")
+  subtotal             Decimal
+  discount             Decimal? @default(0)
+  insuranceCovered     Decimal? @map("insurance_covered")
+  amountDue            Decimal  @map("amount_due")
+  amountPaid           Decimal  @default(0) @map("amount_paid")
+  status               String   @default("draft") // 'draft', 'pending', 'partial', 'paid', 'waived', 'insurance-pending'
+  paymentMethod        String?  @map("payment_method") // 'cash', 'mpesa', 'insurance', 'shif', 'card'
+  notes                String?
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  hospital             Hospital @relation(fields: [hospitalId], references: [id])
+  patient              Patient? @relation(fields: [patientId], references: [id])
+
+  @@index([hospitalId, date(desc)])
+  @@index([invoiceNo])
+  @@map("invoices")
+}
+
+// ─── Compliance Models (New for Phase 4) ─────────────────────────────────────
+
+/// Data Subject Consent
+model DataConsent {
+  id                   String   @id @default(uuid()) @db.Uuid
+  patientId            String   @db.Uuid @map("patient_id")
+  consentType          String   // 'treatment', 'data_processing', 'ai_analysis', 'research'
+  granted              Boolean  @default(false)
+  grantedAt            DateTime? @map("granted_at")
+  withdrawnAt          DateTime? @map("withdrawn_at")
+  ipAddress            String?  @map("ip_address")
+  userAgent            String?  @map("user_agent")
+  notes                String?
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  patient              Patient @relation(fields: [patientId], references: [id])
+
+  @@index([patientId])
+  @@index([consentType])
+  @@map("data_consents")
+}
+
+/// Data Access Request (GDPR/KDPA)
+model DataAccessRequest {
+  id                   String   @id @default(uuid()) @db.Uuid
+  patientId            String   @db.Uuid @map("patient_id")
+  requestType          String   // 'access', 'rectification', 'erasure', 'portability'
+  status               String   @default("pending") // 'pending', 'processing', 'completed', 'rejected'
+  requestData          Json?    @map("request_data")
+  responseData         Json?    @map("response_data")
+  requestedBy          String?
+  requestedAt          DateTime @default(now()) @map("requested_at")
+  completedAt          DateTime? @map("completed_at")
+  rejectionReason      String?  @map("rejection_reason")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  // Relations
+  patient              Patient @relation(fields: [patientId], references: [id])
+
+  @@index([patientId])
+  @@index([status])
+  @@map("data_access_requests")
+}
+
+/// Data Breach Log
+model DataBreachLog {
+  id                   String   @id @default(uuid()) @db.Uuid
+  hospitalId           String?  @db.Uuid @map("hospital_id")
+  breachType           String   // 'unauthorized_access', 'data_leak', 'system_breach'
+  severity             String   // 'low', 'medium', 'high', 'critical'
+  description          String
+  affectedRecords      Int      @map("affected_records")
+  detectedAt           DateTime @map("detected_at")
+  reportedAt           DateTime? @map("reported_at")
+  status               String   @default("investigating") // 'investigating', 'contained', 'resolved', 'closed'
+  remediationActions   Json?    @map("remediation_actions")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  // Relations
+  hospital             Hospital? @relation(fields: [hospitalId], references: [id])
+
+  @@index([hospitalId])
+  @@index([severity])
+  @@index([status])
+  @@map("data_breach_logs")
+}
+
+// ─── ISO 27001 Compliance Models ─────────────────────────────────────────────
+
+/// Security Control (ISO 27001)
+model SecurityControl {
+  id                   String   @id @default(uuid()) @db.Uuid
+  category             String
+  control              String
+  implementationStatus String   @default("not_implemented") @map("implementation_status") // 'not_implemented', 'partial', 'fully_implemented', 'not_applicable'
+  evidence             String?
+  lastAudit            DateTime @default(now()) @map("last_audit")
+  responsiblePerson    String   @map("responsible_person")
+  hospitalId           String?  @db.Uuid @map("hospital_id")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  hospital             Hospital? @relation(fields: [hospitalId], references: [id])
+
+  @@index([category])
+  @@index([implementationStatus])
+  @@index([hospitalId])
+  @@map("security_controls")
+}
+
+/// Risk Assessment (ISO 27001)
+model RiskAssessment {
+  id                   String   @id @default(uuid()) @db.Uuid
+  riskId               String   @unique @map("risk_id")
+  description          String
+  likelihood           String   // 'low', 'medium', 'high', 'critical'
+  impact               String   // 'low', 'medium', 'high', 'critical'
+  riskLevel            String   @map("risk_level") // 'low', 'medium', 'high', 'critical'
+  treatment            String   // 'accept', 'avoid', 'transfer', 'mitigate'
+  mitigationPlan       String   @map("mitigation_plan")
+  residualRisk         String   @map("residual_risk") // 'low', 'medium', 'high', 'critical'
+  assessedBy           String   @map("assessed_by")
+  assessedAt           DateTime @default(now()) @map("assessed_at")
+  hospitalId           String?  @db.Uuid @map("hospital_id")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  // Relations
+  hospital             Hospital? @relation(fields: [hospitalId], references: [id])
+
+  @@index([riskLevel])
+  @@index([hospitalId])
+  @@index([assessedAt(desc)])
+  @@map("risk_assessments")
+}
+
+/// Security Incident (ISO 27001)
+model SecurityIncident {
+  id                   String   @id @default(uuid()) @db.Uuid
+  title                String
+  description          String
+  severity             String   // 'low', 'medium', 'high', 'critical'
+  category             String
+  affectedSystems      String[] @default([]) @map("affected_systems")
+  detectedAt           DateTime @default(now()) @map("detected_at")
+  reportedBy           String   @map("reported_by")
+  status               String   @default("open") // 'open', 'investigating', 'resolved', 'closed'
+  resolution           String?
+  resolvedAt           DateTime? @map("resolved_at")
+  hospitalId           String?  @db.Uuid @map("hospital_id")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  hospital             Hospital? @relation(fields: [hospitalId], references: [id])
+
+  @@index([severity])
+  @@index([status])
+  @@index([hospitalId])
+  @@index([detectedAt(desc)])
+  @@map("security_incidents")
+}
+
+// ─── DHA AfyaLink Data Exchange Models ────────────────────────────────────────
+
+/// Health Data Exchange (DHA AfyaLink)
+model HealthDataExchange {
+  id                   String   @id @default(uuid()) @db.Uuid
+  senderId             String   @map("sender_id")
+  receiverId           String   @map("receiver_id")
+  recordType           String   @map("record_type")
+  recordCount          Int      @default(1) @map("record_count")
+  timestamp            DateTime @default(now())
+  status               String   @default("pending") // 'pending', 'completed', 'failed'
+  error                String?
+  initiatedAt          DateTime? @map("initiated_at")
+  completedAt          DateTime? @map("completed_at")
+  hospitalId           String?  @db.Uuid @map("hospital_id")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  // Relations
+  hospital             Hospital? @relation(fields: [hospitalId], references: [id])
+
+  @@index([status])
+  @@index([recordType])
+  @@index([hospitalId])
+  @@index([timestamp(desc)])
+  @@map("health_data_exchanges")
+}
+
+// ─── GDPR Data Protection Impact Assessment Models ───────────────────────────
+
+/// Data Protection Impact Assessment (GDPR)
+model DataProtectionImpactAssessment {
+  id                   String   @id @default(uuid()) @db.Uuid
+  assessmentType       String   @map("assessment_type")
+  description          String
+  dataCategories       String[] @default([]) @map("data_categories")
+  processingActivities String[] @default([]) @map("processing_activities")
+  riskLevel            String   @map("risk_level") // 'low', 'medium', 'high', 'critical'
+  mitigationMeasures   String   @map("mitigation_measures")
+  completedBy          String   @map("completed_by")
+  completedAt          DateTime @default(now()) @map("completed_at")
+  hospitalId           String?  @db.Uuid @map("hospital_id")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  // Relations
+  hospital             Hospital? @relation(fields: [hospitalId], references: [id])
+
+  @@index([riskLevel])
+  @@index([hospitalId])
+  @@index([completedAt(desc)])
+  @@map("data_protection_impact_assessments")
+}
+
+// ─── Bot Integration Models ─────────────────────────────────────────────────────
+
+model BotMessage {
+  id          String   @id @default(cuid())
+  type        String   // 'appointment', 'prescription', 'lab_results', 'help', etc.
+  platform    String   // 'whatsapp' or 'ussd'
+  phoneNumber String
+  message     String
+  direction   String   // 'inbound' or 'outbound'
+  status      String   // 'sent', 'delivered', 'failed', 'read'
+  timestamp   DateTime @default(now())
+  patientId   String?
+  metadata     Json?    // Additional data like appointmentId, prescriptionId, etc.
+
+  // Relations
+  patient     Patient? @relation(fields: [patientId], references: [id])
+
+  @@index([platform])
+  @@index([phoneNumber])
+  @@index([patientId])
+  @@index([timestamp(desc)])
+  @@map("bot_messages")
+}
+
+model MedicationReminder {
+  id            String   @id @default(cuid())
+  prescriptionId String
+  patientId     String
+  reminderTime  String   // HH:MM format
+  phoneNumber   String
+  active        Boolean  @default(true)
+  lastSent      DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  prescription  Prescription @relation(fields: [prescriptionId], references: [id])
+  patient       Patient @relation(fields: [patientId], references: [id])
+
+  @@index([prescriptionId])
+  @@index([patientId])
+  @@index([active])
+  @@map("medication_reminders")
+}
+
+model MedicationAdherence {
+  id             String   @id @default(cuid())
+  prescriptionId  String
+  patientId      String
+  takenAt        DateTime @default(now())
+  status         String   // 'TAKEN', 'SKIPPED', 'LATE'
+  notes          String?
+  
+  // Relations
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id])
+  patient        Patient @relation(fields: [patientId], references: [id])
+
+  @@index([prescriptionId])
+  @@index([patientId])
+  @@index([takenAt(desc)])
+  @@map("medication_adherence")
+}
+
+// ─── RLS Policy Comments (Reference for PostgreSQL RLS) ──────────────────────
+
+/*
+-- Row Level Security Policies (to be applied in PostgreSQL)
+-- These are comments for reference; actual RLS is implemented via SQL migrations
+
+-- Hospital data isolation
+-- CREATE POLICY "hospital_isolation" ON patients
+--   FOR ALL USING (
+--     EXISTS (
+--       SELECT 1 FROM profiles p
+--       WHERE p.id = auth.uid()
+--         AND p.hospital_id = patients.hospital_id
+--         AND p.status = 'active'
+--     )
+--   );
+
+-- Admin full access
+-- CREATE POLICY "admin_full_access" ON audit_logs
+--   FOR SELECT USING (
+--     EXISTS (
+--       SELECT 1 FROM profiles p
+--       WHERE p.id = auth.uid()
+--         AND p.role = 'admin'
+--         AND p.status = 'active'
+--     )
+--   );
+
+-- Patient self-access
+-- CREATE POLICY "patient_self_access" ON patients
+--   FOR SELECT USING (auth.uid() = user_id);
+*/

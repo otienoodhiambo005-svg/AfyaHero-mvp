@@ -1,0 +1,48 @@
+{
+  "name": "AFYAHERO — Hospital OS",
+  "short_name": "AFYAHERO",
+  "description": "Africa's AI-native hospital operating system. Works everywhere, even offline.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0D1F17",
+  "theme_color": "#2ECC71",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/afyahero-icon.jpeg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/afyahero-icon.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["medical", "health", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Patient Queue",
+      "short_name": "Queue",
+      "description": "Open the live patient queue",
+      "url": "/dashboard/queue",
+      "icons": [{ "src": "/afyahero-icon.jpeg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Reception",
+      "short_name": "Check-in",
+      "description": "Check in a new patient",
+      "url": "/dashboard/reception",
+      "icons": [{ "src": "/afyahero-icon.jpeg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Pharmacy",
+      "short_name": "Pharmacy",
+      "description": "Open pharmacy dispensing",
+      "url": "/dashboard/pharmacy",
+      "icons": [{ "src": "/afyahero-icon.jpeg", "sizes": "192x192" }]
+    }
+  ]
+}
