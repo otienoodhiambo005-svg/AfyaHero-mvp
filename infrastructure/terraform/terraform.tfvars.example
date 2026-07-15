@@ -1,0 +1,15 @@
+# Example Terraform Variables for AfyaHero Infrastructure
+# Copy this file to terraform.tfvars and fill in your actual values
+
+project_id = "your-project-id"
+region = "us-central1"
+domain_name = "afyahero.example.com"
+db_password = "change-this-secure-password"
+environment = "production"
+
+# Optional: Override defaults
+enable_monitoring = true
+enable_logging = true
+max_db_connections = 200
+redis_memory_gb = 2
+storage_class = "STANDARD"

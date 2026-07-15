@@ -1,0 +1,319 @@
+{
+  "info": {
+    "_postman_id": "afyahero-fhir-api",
+    "name": "AfyaHero FHIR API",
+    "description": "FHIR R4 compliant REST API for healthcare data exchange",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Server Capabilities",
+      "item": [
+        {
+          "name": "Get CapabilityStatement",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/fhir/metadata",
+              "host": ["{{base_url}}"],
+              "path": ["api", "fhir", "metadata"]
+            },
+            "description": "Get server's FHIR capabilities and supported resources"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Patient Management",
+      "item": [
+        {
+          "name": "Get Patient by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/fhir/Patient/{{patient_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "fhir", "Patient", "{{patient_id}}"]
+            },
+            "description": "Retrieve a specific patient by their FHIR ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Search Patients by Name",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/fhir/Patient?name=John",
+              "host": ["{{base_url}}"],
+              "path": ["api", "fhir", "Patient"],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "John"
+                }
+              ]
+            },
+            "description": "Search for patients by name (supports partial matches)"
+          },
+          "response": []
+        },
+        {
+          "name": "Search Patients by Phone",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/fhir/Patient?phone=+254701234567",
+              "host": ["{{base_url}}"],
+              "path": ["api", "fhir", "Patient"],
+              "query": [
+                {
+                  "key": "phone",
+                  "value": "+254701234567"
+                }
+              ]
+            },
+            "description": "Search for patients by phone number"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Observations (Vitals & Lab)",
+      "item": [
+        {
+          "name": "Search Vital Signs by Patient",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/fhir/Observation?subject=Patient/{{patient_id}}&category=vital-signs",
+              "host": ["{{base_url}}"],
+              "path": ["api", "fhir", "Observation"],
+              "query": [
+                {
+                  "key": "subject",
+                  "value": "Patient/{{patient_id}}"
+                },
+                {
+                  "key": "category",
+                  "value": "vital-signs"
+                }
+              ]
+            },
+            "description": "Get all vital signs recorded for a patient"
+          },
+          "response": []
+        },
+        {
+          "name": "Search Lab Results by Patient",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/fhir/Observation?subject=Patient/{{patient_id}}&category=laboratory",
+              "host": ["{{base_url}}"],
+              "path": ["api", "fhir", "Observation"],
+              "query": [
+                {
+                  "key": "subject",
+                  "value": "Patient/{{patient_id}}"
+                },
+                {
+                  "key": "category",
+                  "value": "laboratory"
+                }
+              ]
+            },
+            "description": "Get all laboratory results recorded for a patient"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Medication Requests",
+      "item": [
+        {
+          "name": "Search Active Prescriptions by Patient",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/fhir/MedicationRequest?subject=Patient/{{patient_id}}&status=active",
+              "host": ["{{base_url}}"],
+              "path": ["api", "fhir", "MedicationRequest"],
+              "query": [
+                {
+                  "key": "subject",
+                  "value": "Patient/{{patient_id}}"
+                },
+                {
+                  "key": "status",
+                  "value": "active"
+                }
+              ]
+            },
+            "description": "Get all active prescriptions for a patient"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Practitioners & Organizations",
+      "item": [
+        {
+          "name": "Get Practitioner by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/fhir/Practitioner/doc-123",
+              "host": ["{{base_url}}"],
+              "path": ["api", "fhir", "Practitioner", "doc-123"]
+            },
+            "description": "Retrieve a specific practitioner by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Organization by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/fhir/Organization/org-123",
+              "host": ["{{base_url}}"],
+              "path": ["api", "fhir", "Organization", "org-123"]
+            },
+            "description": "Retrieve a specific organization by ID"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://fhir.afyahero.com",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "YOUR_JWT_TOKEN_HERE",
+      "type": "string"
+    },
+    {
+      "key": "patient_id",
+      "value": "patient-123",
+      "type": "string"
+    },
+    {
+      "key": "observation_id",
+      "value": "obs-123",
+      "type": "string"
+    }
+  ]
+}

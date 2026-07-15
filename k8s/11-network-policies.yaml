@@ -1,0 +1,198 @@
+# ─── Network Policies for AfyaHero ──────────────────────────────────────────────
+# These policies implement zero-trust networking by default-deny with explicit allows
+# 
+# IMPORTANT: Network policies require a CNI that supports them (e.g., Calico, Cilium)
+# Apply with: kubectl apply -f k8s/11-network-policies.yaml
+
+---
+# Default deny all ingress and egress traffic
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: afyahero-default-deny
+  namespace: afyahero
+  labels:
+    app: afyahero
+    component: network-policy
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+
+---
+# Allow ingress from ingress controller to application
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: afyahero-allow-ingress
+  namespace: afyahero
+  labels:
+    app: afyahero
+    component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: afyahero
+      component: web
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow traffic from ingress-nginx namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+              # Or use: kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3000
+    # Allow traffic from monitoring namespace (for health checks)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 3000
+        - protocol: TCP
+          port: 9090
+
+---
+# Allow egress to required external services
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: afyahero-allow-egress
+  namespace: afyahero
+  labels:
+    app: afyahero
+    component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: afyahero
+  policyTypes:
+    - Egress
+  egress:
+    # PostgreSQL (Supabase) - port 5432
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 5432
+    
+    # Redis (Upstash) - port 6379
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 6379
+    
+    # HTTPS for external APIs (AI providers, email, etc.)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+    
+    # HTTP for Let's Encrypt certificate validation
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 80
+    
+    # DNS resolution
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+---
+# Allow internal communication between AfyaHero pods
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: afyahero-allow-internal
+  namespace: afyahero
+  labels:
+    app: afyahero
+    component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: afyahero
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow traffic from other AfyaHero pods
+    - from:
+        - podSelector:
+            matchLabels:
+              app: afyahero
+      ports:
+        - protocol: TCP
+          port: 3000
+        - protocol: TCP
+          port: 9090
+
+---
+# Allow monitoring namespace to scrape metrics
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: afyahero-allow-metrics-scrape
+  namespace: afyahero
+  labels:
+    app: afyahero
+    component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: afyahero
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow Prometheus to scrape metrics
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9090
+
+---
+# Gateway network policy (if using Python gateway)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: gateway-allow-ingress
+  namespace: afyahero
+  labels:
+    app: gateway
+    component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: gateway
+  policyTypes:
+    - Ingress
+  ingress:
+    # Only allow traffic from AfyaHero web pods
+    - from:
+        - podSelector:
+            matchLabels:
+              app: afyahero
+              component: web
+      ports:
+        - protocol: TCP
+          port: 8000

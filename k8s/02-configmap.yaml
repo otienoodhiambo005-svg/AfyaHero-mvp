@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: afyahero-config
+  namespace: afyahero
+  labels:
+    app: afyahero
+    component: config
+data:
+  # Node environment
+  NODE_ENV: "production"
+  PORT: "3000"
+  
+  # Next.js configuration
+  NEXT_TELEMETRY_DISABLED: "1"
+  NEXT_PUBLIC_APP_URL: "https://afyahero.com"
+  SUPERADMIN_PUBLIC_APP_URL: "https://superadmin.afyahero.com"
+  
+  # Gateway configuration
+  GATEWAY_PORT: "8000"
+  GATEWAY_WORKERS: "2"
+  
+  # FHIR Configuration
+  FHIR_BASE_URL: "https://fhir.afyahero.com"
+  FHIR_ORG_ID: "afyahero-facility"
+  FHIR_SYSTEM_URL: "https://afyahero.com/fhir"
+  FHIR_VERSION: "4.0.1"
+  
+  # Bandwidth optimization
+  ENABLE_IMAGE_OPTIMIZATION: "true"
+  IMAGE_CACHE_TTL: "31536000"
+  ENABLE_SERVICE_WORKER: "true"
+  
+  # Monitoring and observability
+  LOG_LEVEL: "info"
+  ENABLE_METRICS: "true"
+  METRICS_PORT: "9090"
+  
+  # Rate limiting
+  RATE_LIMIT_ENABLED: "true"
+  RATE_LIMIT_WINDOW: "60"
+  RATE_LIMIT_REQUESTS: "120"
+  
+  # Database connection pooling
+  DATABASE_POOL_SIZE: "20"
+  DATABASE_IDLE_TIMEOUT: "30"
+  DATABASE_CONNECTION_TIMEOUT: "5"
+  
+  # Cache configuration
+  CACHE_ENABLED: "true"
+  CACHE_TTL: "3600"
+  REDIS_CONNECTION_POOL_SIZE: "10"
+  
+  # Session configuration
+  SESSION_MAX_AGE: "86400"
+  SESSION_REFRESH_THRESHOLD: "3600"
+  
+  # Features
+  ENABLE_FHIR_API: "true"
+  ENABLE_BANDWIDTH_OPTIMIZATION: "true"
+  ENABLE_AI_FEATURES: "true"
+  
+  # Kubernetes configuration
+  KUBERNETES_ENABLED: "true"
+  CLUSTER_NAME: "afyahero-prod"
+  REGION: "us-east-1"

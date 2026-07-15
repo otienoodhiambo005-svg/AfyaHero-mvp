@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: afyahero
+  labels:
+    name: afyahero
+    environment: production
+    app: afyahero
+spec:
+  finalizers:
+    - kubernetes

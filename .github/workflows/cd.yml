@@ -1,0 +1,164 @@
+name: CD
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'staging'
+    environment:
+      name: staging
+      url: https://staging.afyahero.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: pulse-core-nextjs/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd pulse-core-nextjs
+          npm ci
+
+      - name: Run tests
+        run: |
+          cd pulse-core-nextjs
+          npm test
+
+      - name: Build application
+        run: |
+          cd pulse-core-nextjs
+          npm run build
+
+      - name: Deploy to staging
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./pulse-core-nextjs
+
+      - name: Run database migrations
+        run: |
+          cd pulse-core-nextjs
+          node scripts/run-migration.js --env=staging
+
+      - name: Health check
+        run: |
+          sleep 30
+          curl -f https://staging.afyahero.com/api/monitoring/health || exit 1
+
+      - name: Notify deployment success
+        uses: 8398a7/action-slack@v3
+        if: success()
+        with:
+          status: ${{ job.status }}
+          text: 'Staging deployment successful'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.environment == 'production'
+    environment:
+      name: production
+      url: https://afyahero.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: pulse-core-nextjs/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd pulse-core-nextjs
+          npm ci
+
+      - name: Run tests
+        run: |
+          cd pulse-core-nextjs
+          npm test
+
+      - name: Run E2E tests
+        run: |
+          cd pulse-core-nextjs
+          npm run test:e2e
+
+      - name: Build application
+        run: |
+          cd pulse-core-nextjs
+          npm run build
+
+      - name: Create database backup
+        run: |
+          cd pulse-core-nextjs
+          node scripts/backup-database.js --env=production
+
+      - name: Deploy to production
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./pulse-core-nextjs
+
+      - name: Run database migrations
+        run: |
+          cd pulse-core-nextjs
+          node scripts/run-migration.js --env=production
+
+      - name: Health check
+        run: |
+          sleep 30
+          curl -f https://afyahero.com/api/monitoring/health || exit 1
+
+      - name: Run smoke tests
+        run: |
+          curl -f https://afyahero.com/api/monitoring/health
+          curl -f https://afyahero.com/api/settings?role=doctor
+
+      - name: Notify deployment success
+        uses: 8398a7/action-slack@v3
+        if: success()
+        with:
+          status: ${{ job.status }}
+          text: 'Production deployment successful'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+      - name: Notify deployment failure
+        uses: 8398a7/action-slack@v3
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          text: 'Production deployment failed - initiating rollback'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          cd pulse-core-nextjs
+          node scripts/rollback-deployment.js --env=production

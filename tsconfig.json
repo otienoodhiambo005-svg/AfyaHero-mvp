@@ -1,0 +1,6 @@
+{
+  "extends": "./pulse-core-nextjs/tsconfig.json",
+  "compilerOptions": {
+    "ignoreDeprecations": "6.0"
+  }
+}

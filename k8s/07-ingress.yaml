@@ -1,0 +1,230 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: afyahero-ingress
+  namespace: afyahero
+  labels:
+    app: afyahero
+    component: ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/upstream-hash-by: "$request_uri"
+    nginx.ingress.kubernetes.io/load-balance: "ewma"
+    nginx.ingress.kubernetes.io/proxy-buffering: "on"
+    nginx.ingress.kubernetes.io/proxy-buffers-number: "8"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-XSS-Protection: 1; mode=block";
+      more_set_headers "Referrer-Policy: strict-origin-when-cross-origin";
+    nginx.ingress.kubernetes.io/limit-rps: "1000"
+    nginx.ingress.kubernetes.io/limit-connections: "100"
+    nginx.ingress.kubernetes.io/compress: "on"
+    nginx.ingress.kubernetes.io/max-body-size: "100m"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "10"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+spec:
+  tls:
+    - hosts:
+        - afyahero.com
+        - www.afyahero.com
+        - hospital.afyahero.com
+        - admin.afyahero.com
+        - superadmin.afyahero.com
+        - patient.afyahero.com
+        - chw.afyahero.com
+        - api.afyahero.com
+        - fhir.afyahero.com
+      secretName: afyahero-tls
+  rules:
+    # Main domain - Next.js frontend
+    - host: afyahero.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: afyahero-web
+                port:
+                  number: 3000
+    
+    - host: www.afyahero.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: afyahero-web
+                port:
+                  number: 3000
+    
+    - host: hospital.afyahero.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: afyahero-web
+                port:
+                  number: 3000
+    
+    - host: admin.afyahero.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: afyahero-web
+                port:
+                  number: 3000
+
+    - host: superadmin.afyahero.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: afyahero-superadmin
+                port:
+                  number: 3000
+    
+    - host: patient.afyahero.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: afyahero-web
+                port:
+                  number: 3000
+    
+    - host: chw.afyahero.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: afyahero-web
+                port:
+                  number: 3000
+    
+    # API subdomain - FastAPI gateway
+    - host: api.afyahero.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: afyahero-gateway
+                port:
+                  number: 8000
+    
+    # FHIR API subdomain - routes to gateway
+    - host: fhir.afyahero.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: afyahero-gateway
+                port:
+                  number: 8000
+
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: afyahero-tls
+  namespace: afyahero
+spec:
+  secretName: afyahero-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - afyahero.com
+    - www.afyahero.com
+    - hospital.afyahero.com
+    - admin.afyahero.com
+    - superadmin.afyahero.com
+    - patient.afyahero.com
+    - chw.afyahero.com
+    - api.afyahero.com
+    - fhir.afyahero.com
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: afyahero-network-policy
+  namespace: afyahero
+spec:
+  podSelector:
+    matchLabels:
+      app: afyahero
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3000
+        - protocol: TCP
+          port: 8000
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: prometheus
+      ports:
+        - protocol: TCP
+          port: 9090
+    - from:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 3000
+        - protocol: TCP
+          port: 8000
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 6379

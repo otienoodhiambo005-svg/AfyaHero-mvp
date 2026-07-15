@@ -1,0 +1,36 @@
+name: Data retention cron
+
+on:
+  schedule:
+    # Weekly Sunday 02:00 UTC — adjust to your compliance window
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (count only, no deletes)'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  purge:
+    name: Run GDPR retention job
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST data-retention endpoint
+        env:
+          CRON_SECRET: ${{ secrets.DATA_RETENTION_CRON_SECRET }}
+          APP_URL: ${{ secrets.AFYAHERO_APP_URL }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run || 'false' }}
+        run: |
+          if [ -z "$CRON_SECRET" ] || [ -z "$APP_URL" ]; then
+            echo "Skipping: set repository secrets DATA_RETENTION_CRON_SECRET and AFYAHERO_APP_URL"
+            exit 0
+          fi
+          curl -fsS -X POST "${APP_URL%/}/api/cron/data-retention" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            -d "{\"dryRun\":${DRY_RUN}}"

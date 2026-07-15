@@ -1,0 +1,189 @@
+version: '3.8'
+
+services:
+  # AI Triage Service
+  ai-triage-service:
+    build:
+      context: ./services/ai-triage
+      dockerfile: Dockerfile
+    container_name: afyahero-ai-triage
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+      - OFFLINE_MODE=false
+      - MODEL_LOADED=false
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    networks:
+      - ai-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # AI Diagnosis Service
+  ai-diagnosis-service:
+    build:
+      context: ./services/ai-diagnosis
+      dockerfile: Dockerfile
+    container_name: afyahero-ai-diagnosis
+    ports:
+      - "8002:8002"
+    environment:
+      - PORT=8002
+      - OFFLINE_MODE=false
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    networks:
+      - ai-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8002/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # AI Imaging Service
+  ai-imaging-service:
+    build:
+      context: ./services/ai-imaging
+      dockerfile: Dockerfile
+    container_name: afyahero-ai-imaging
+    ports:
+      - "8003:8003"
+    environment:
+      - PORT=8003
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT:-}
+      - GOOGLE_CREDENTIALS=${GOOGLE_CREDENTIALS:-}
+      - HEALTHCARE_DATASET_ID=${HEALTHCARE_DATASET_ID:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    networks:
+      - ai-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8003/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # AI Billing Service
+  ai-billing-service:
+    build:
+      context: ./services/ai-billing
+      dockerfile: Dockerfile
+    container_name: afyahero-ai-billing
+    ports:
+      - "8004:8004"
+    environment:
+      - PORT=8004
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT:-}
+      - GOOGLE_CREDENTIALS=${GOOGLE_CREDENTIALS:-}
+    networks:
+      - ai-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8004/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # AI Operational Service
+  ai-operational-service:
+    build:
+      context: ./services/ai-operational
+      dockerfile: Dockerfile
+    container_name: afyahero-ai-operational
+    ports:
+      - "8005:8005"
+    environment:
+      - PORT=8005
+      - DATABASE_URL=${DATABASE_URL:-}
+    networks:
+      - ai-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8005/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # AI Pharmacy Service
+  ai-pharmacy-service:
+    build:
+      context: ./services/ai-pharmacy
+      dockerfile: Dockerfile
+    container_name: afyahero-ai-pharmacy
+    ports:
+      - "8006:8006"
+    environment:
+      - PORT=8006
+      - DATABASE_URL=${DATABASE_URL:-}
+      - DRUGBANK_API_KEY=${DRUGBANK_API_KEY:-}
+    networks:
+      - ai-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8006/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # AI Orchestration Service
+  ai-orchestration-service:
+    build:
+      context: ./services/ai-orchestration
+      dockerfile: Dockerfile
+    container_name: afyahero-ai-orchestration
+    ports:
+      - "8007:8007"
+    environment:
+      - PORT=8007
+      - TRIAGE_SERVICE_URL=http://ai-triage-service:8001
+      - DIAGNOSIS_SERVICE_URL=http://ai-diagnosis-service:8002
+      - IMAGING_SERVICE_URL=http://ai-imaging-service:8003
+      - BILLING_SERVICE_URL=http://ai-billing-service:8004
+      - OPERATIONAL_SERVICE_URL=http://ai-operational-service:8005
+      - PHARMACY_SERVICE_URL=http://ai-pharmacy-service:8006
+    networks:
+      - ai-network
+    depends_on:
+      - ai-triage-service
+      - ai-diagnosis-service
+      - ai-imaging-service
+      - ai-billing-service
+      - ai-operational-service
+      - ai-pharmacy-service
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8007/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # HL7 Gateway Service
+  hl7-gateway-service:
+    build:
+      context: ./services/hl7-gateway
+      dockerfile: Dockerfile
+    container_name: afyahero-hl7-gateway
+    ports:
+      - "8008:8008"
+    environment:
+      - PORT=8008
+    networks:
+      - ai-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8008/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  ai-network:
+    driver: bridge

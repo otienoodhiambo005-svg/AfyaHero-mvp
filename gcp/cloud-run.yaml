@@ -1,0 +1,125 @@
+# Google Cloud Run Deployment Configuration for AfyaHero
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: afyahero-api
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/ingress-status: all
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: '1'
+        autoscaling.knative.dev/maxScale: '100'
+        run.googleapis.com/cpu-throttling: 'False'
+        run.googleapis.com/execution-environment: gen2
+    spec:
+      containers:
+      - name: afyahero-nextjs
+        image: gcr.io/afyahero/afyahero:latest
+        ports:
+        - containerPort: 3000
+        resources:
+          limits:
+            cpu: '2'
+            memory: 4Gi
+          requests:
+            cpu: '1'
+            memory: 2Gi
+        env:
+        - name: NODE_ENV
+          value: production
+        - name: PORT
+          value: '3000'
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: afyahero-secrets
+              key: DATABASE_URL
+        - name: DIRECT_URL
+          valueFrom:
+            secretKeyRef:
+              name: afyahero-secrets
+              key: DIRECT_URL
+        - name: MPESA_CONSUMER_KEY
+          valueFrom:
+            secretKeyRef:
+              name: afyahero-secrets
+              key: MPESA_CONSUMER_KEY
+        - name: MPESA_CONSUMER_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: afyahero-secrets
+              key: MPESA_CONSUMER_SECRET
+        - name: MPESA_SHORTCODE
+          valueFrom:
+            secretKeyRef:
+              name: afyahero-secrets
+              key: MPESA_SHORTCODE
+        - name: MPESA_PASSKEY
+          valueFrom:
+            secretKeyRef:
+              name: afyahero-secrets
+              key: MPESA_PASSKEY
+        - name: PESAPAL_CONSUMER_KEY
+          valueFrom:
+            secretKeyRef:
+              name: afyahero-secrets
+              key: PESAPAL_CONSUMER_KEY
+        - name: PESAPAL_CONSUMER_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: afyahero-secrets
+              key: PESAPAL_CONSUMER_SECRET
+        - name: NHIF_API_URL
+          valueFrom:
+            secretKeyRef:
+              name: afyahero-secrets
+              key: NHIF_API_URL
+        - name: NHIF_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: afyahero-secrets
+              key: NHIF_CLIENT_ID
+        - name: NHIF_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: afyahero-secrets
+              key: NHIF_CLIENT_SECRET
+        - name: DPO_NAME
+          valueFrom:
+            secretKeyRef:
+              name: afyahero-secrets
+              key: DPO_NAME
+        - name: DPO_EMAIL
+          valueFrom:
+            secretKeyRef:
+              name: afyahero-secrets
+              key: DPO_EMAIL
+        - name: DPO_PHONE
+          valueFrom:
+            secretKeyRef:
+              name: afyahero-secrets
+              key: DPO_PHONE
+        - name: PHI_ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: afyahero-secrets
+              key: PHI_ENCRYPTION_KEY
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      serviceAccountName: afyahero-cloud-run@afyahero.iam.gserviceaccount.com
+  traffic:
+  - percent: 100
+    latestRevision: true

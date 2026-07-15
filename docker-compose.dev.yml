@@ -1,0 +1,145 @@
+services:
+  # ─── PostgreSQL Database (Development) ───────────────────────────────────
+  db:
+    image: postgres:15-alpine
+    container_name: afyahero-db-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: afyahero
+      POSTGRES_PASSWORD: afyahero_dev
+      POSTGRES_DB: afyahero_dev
+      POSTGRES_MAX_CONNECTIONS: 100
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U afyahero"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+    networks:
+      - afyahero-dev-net
+
+  # ─── Redis (Development) ───────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: afyahero-redis-dev
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_dev_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "6379:6379"
+    networks:
+      - afyahero-dev-net
+
+  # ─── FastAPI Gateway (Development) ───────────────────────────────────────────
+  gateway:
+    container_name: afyahero-gateway-dev
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    image: afyahero-gateway:dev
+    restart: unless-stopped
+    env_file:
+      - ./gateway/.env
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql+asyncpg://afyahero:afyahero_dev@db:5432/afyahero_dev
+      - DATABASE_URL_SYNC=postgresql://afyahero:afyahero_dev@db:5432/afyahero_dev
+      - REDIS_URL=redis://redis:6379
+      - SECRET_KEY=dev-secret-key-change-in-production-32chars
+      - PII_ENCRYPTION_KEY=dev-encryption-key-32chars-!!
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./gateway:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - afyahero-dev-net
+
+  # ─── Next.js Frontend (Development) ───────────────────────────────────────────
+  web:
+    container_name: afyahero-web-dev
+    build:
+      context: ./pulse-core-nextjs
+      dockerfile: Dockerfile
+      target: builder
+    image: afyahero-web:dev
+    restart: unless-stopped
+    env_file:
+      - ./pulse-core-nextjs/.env.local
+    environment:
+      - NODE_ENV=development
+      - PORT=3003
+      - HOSTNAME=0.0.0.0
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL:-https://your-project.supabase.co}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY:-your-anon-key}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-your-service-role-key}
+      - SESSION_SECRET=${SESSION_SECRET:-dev-session-secret-32-chars}
+    ports:
+      - "3003:3003"
+    volumes:
+      - ./pulse-core-nextjs:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      gateway:
+        condition: service_healthy
+    command: npm run dev
+    networks:
+      - afyahero-dev-net
+
+  # ─── Standalone Super Admin Portal (Development, Optional profile) ─────────
+  superadmin-web:
+    container_name: afyahero-superadmin-web-dev
+    profiles: ["superadmin"]
+    build:
+      context: ./pulse-core-nextjs
+      dockerfile: Dockerfile
+      target: builder
+    image: afyahero-superadmin-web:dev
+    restart: unless-stopped
+    env_file:
+      - ./pulse-core-nextjs/.env.local
+    environment:
+      - NODE_ENV=development
+      - AFYAHERO_APP_MODE=superadmin
+      - NEXT_PUBLIC_APP_URL=${SUPERADMIN_PUBLIC_APP_URL:-http://localhost:3004}
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL:-https://your-project.supabase.co}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY:-your-anon-key}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-your-service-role-key}
+      - SESSION_SECRET=${SESSION_SECRET:-dev-session-secret-32-chars}
+    ports:
+      - "3004:3004"
+    volumes:
+      - ./pulse-core-nextjs:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      gateway:
+        condition: service_healthy
+    command: npm run dev:superadmin
+    networks:
+      - afyahero-dev-net
+
+volumes:
+  postgres_dev_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+
+networks:
+  afyahero-dev-net:
+    driver: bridge

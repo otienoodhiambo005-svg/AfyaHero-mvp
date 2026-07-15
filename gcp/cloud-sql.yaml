@@ -1,0 +1,87 @@
+# Google Cloud SQL PostgreSQL Configuration for AfyaHero
+apiVersion: sql.cnrm.cloud.google.com/v1beta1
+kind: SQLInstance
+metadata:
+  name: afyahero-postgres
+spec:
+  databaseVersion: POSTGRES_15
+  region: africa-south1
+  settings:
+    tier: db-custom-8-32768
+    availabilityType: REGIONAL
+    backupConfiguration:
+      enabled: true
+      pointInTimeRecoveryEnabled: true
+      backupRetentionSettings:
+        retainedBackups: 30
+    ipConfiguration:
+      privateNetwork: projects/afyahero/global/networks/afyahero-vpc
+      requireSsl: true
+    maintenanceWindow:
+      day: 1
+      hour: 3
+    databaseFlags:
+    - name: max_connections
+      value: '500'
+    - name: shared_buffers
+      value: '8GB'
+    - name: effective_cache_size
+      value: '24GB'
+    - name: work_mem
+      value: '16MB'
+    - name: maintenance_work_mem
+      value: '2GB'
+    - name: wal_buffers
+      value: '16MB'
+    - name: min_wal_size
+      value: '2GB'
+    - name: max_wal_size
+      value: '8GB'
+    - name: checkpoint_completion_target
+      value: '0.9'
+    - name: log_statement
+      value: 'ddl'
+    - name: log_min_duration_statement
+      value: '1000'
+    - name: log_lock_waits
+      value: 'on'
+    - name: log_temp_files
+      value: '0'
+    - name: track_activity_query_size
+      value: '4096'
+    userLabels:
+      environment: production
+      application: afyahero
+      compliance: hipaa,kdpa,iso27001
+---
+apiVersion: sql.cnrm.cloud.google.com/v1beta1
+kind: SQLDatabase
+metadata:
+  name: afyahero
+spec:
+  instanceRef:
+    name: afyahero-postgres
+  charset: UTF8
+  collation: en_US.UTF8
+---
+apiVersion: sql.cnrm.cloud.google.com/v1beta1
+kind: SQLUser
+metadata:
+  name: afyahero-admin
+spec:
+  instanceRef:
+    name: afyahero-postgres
+  password:
+    valueFrom:
+      secretKeyRef:
+        name: afyahero-secrets
+        key: DATABASE_PASSWORD
+---
+apiVersion: sql.cnrm.cloud.google.com/v1beta1
+kind: SSLClientCert
+metadata:
+  name: afyahero-client-cert
+spec:
+  instanceRef:
+    name: afyahero-postgres
+  commonName: afyahero-cloud-run

@@ -1,0 +1,75 @@
+{
+  "name": "afyaheronextjs",
+  "version": "0.1.0",
+  "private": true,
+  "description": "An AI native operating system integrating AI into hospital workflows",
+  "homepage": "https://github.com/AfyaVerse-stack/AFYAHERO.HOSPITAL.OS#readme",
+  "bugs": {
+    "url": "https://github.com/AfyaVerse-stack/AFYAHERO.HOSPITAL.OS/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AfyaVerse-stack/AFYAHERO.HOSPITAL.OS.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "dev": "npm run dev --prefix pulse-core-nextjs -- --port 3003",
+    "dev:superadmin": "npm --prefix pulse-core-nextjs run dev:superadmin --",
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:superadmin\"",
+    "build": "npm run build --prefix pulse-core-nextjs",
+    "build:superadmin": "npm --prefix pulse-core-nextjs run build:superadmin --",
+    "start": "npm run start --prefix pulse-core-nextjs",
+    "start:superadmin": "npm --prefix pulse-core-nextjs run start:superadmin --",
+    "lint": "npm run lint --prefix pulse-core-nextjs",
+    "typecheck": "npm run typecheck --prefix pulse-core-nextjs",
+    "verify": "npm run verify --prefix pulse-core-nextjs",
+    "verify:kubernetes": "node scripts/verify-kubernetes.mjs",
+    "verify:all": "npm run verify && npm run verify:kubernetes",
+    "test": "npm run test --prefix pulse-core-nextjs",
+    "test:ui": "npm run test:ui --prefix pulse-core-nextjs",
+    "test:debug": "npm run test:debug --prefix pulse-core-nextjs",
+    "test:ctas": "npm run test --prefix pulse-core-nextjs -- tests/dashboard-cta-workflows.spec.ts",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@sentry/nextjs": "^10.48.0",
+    "@supabase/auth-ui-react": "^0.4.7",
+    "@supabase/supabase-js": "^2.102.0",
+    "autoskills": "^0.2.7",
+    "axios": "^1.15.0",
+    "droid": "^0.109.1",
+    "google-auth-library": "^10.6.2",
+    "googleapis": "^171.4.0",
+    "import-in-the-middle": "^3.0.1",
+    "lucide-react": "^0.344.0",
+    "next": "^9.3.3",
+    "opencode-windows-x64": "^1.14.41",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.72.1",
+    "require-in-the-middle": "^8.0.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.14",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint-config-airbnb-typescript": "^18.0.0",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0"
+  },
+  "notes": {
+    "payment_methods": "DISABLED - Payment packages (flutterwave-node, paystack, stripe) removed due to critical security vulnerabilities. See AUDIT_REPORT_2026_FULL_SWEEP.md for details. Manual payment tracking should be used until secure alternatives are implemented."
+  }
+}

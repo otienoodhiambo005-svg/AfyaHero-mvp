@@ -1,0 +1,736 @@
+# Enhanced Monitoring and Load Balancing Configuration
+# This file extends the base monitoring setup with advanced observability
+
+---
+# ConfigMap for enhanced application monitoring
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: afyahero-enhanced-config
+  namespace: afyahero
+  labels:
+    app: afyahero
+    component: monitoring
+data:
+  # Application configuration for observability
+  LOG_LEVEL: "info"
+  LOG_FORMAT: "json"
+  ENABLE_TRACING: "true"
+  TRACING_SAMPLE_RATE: "0.1"  # 10% of requests traced
+  
+  # Cache configuration
+  CACHE_TTL_DEFAULT: "300"  # 5 minutes
+  CACHE_TTL_FHIR: "300"  # 5 minutes for FHIR resources
+  CACHE_TTL_FORMULARY: "3600"  # 1 hour for formulary
+  
+  # Rate limiting configuration
+  RATE_LIMIT_ENABLED: "true"
+  RATE_LIMIT_API_READ: "100"  # requests per minute
+  RATE_LIMIT_API_WRITE: "30"  # requests per minute
+  RATE_LIMIT_AUTH: "5"  # requests per minute
+  
+  # Circuit breaker configuration
+  CIRCUIT_BREAKER_FAILURE_THRESHOLD: "5"
+  CIRCUIT_BREAKER_TIMEOUT: "60000"  # 1 minute
+  
+  # Queue configuration
+  QUEUE_CONCURRENCY: "5"
+  QUEUE_MAX_RETRIES: "3"
+
+---
+# Additional Prometheus recording rules for derived metrics
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: afyahero-recording-rules
+  namespace: afyahero
+  labels:
+    app: afyahero
+    component: monitoring
+spec:
+  groups:
+    - name: afyahero.recording
+      interval: 30s
+      rules:
+        # Request rate per pod
+        - record: afyahero:request_rate:rate5m
+          expr: sum(rate(http_requests_total{job="afyahero"}[5m])) by (pod)
+        
+        # Error rate per pod
+        - record: afyahero:error_rate:rate5m
+          expr: sum(rate(http_requests_total{job="afyahero",status=~"5.."}[5m])) by (pod)
+        
+        # Average response time per endpoint
+        - record: afyahero:request_duration_avg:rate5m
+          expr: avg(rate(http_request_duration_seconds_sum{job="afyahero"}[5m])) by (handler)
+        
+        # Cache hit rate
+        - record: afyahero:cache_hit_rate:rate5m
+          expr: sum(rate(cache_hits_total[5m])) / sum(rate(cache_hits_total[5m])) + sum(rate(cache_misses_total[5m]))
+        
+        # Queue processing rate
+        - record: afyahero:queue_processing_rate:rate5m
+          expr: sum(rate(queue_jobs_processed_total[5m]))
+        
+        # Database connection pool usage
+        - record: afyahero:db_pool_usage:ratio
+          expr: db_pool_connections_in_use / db_pool_connections_max
+
+---
+# Additional alerts for application-level monitoring
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: afyahero-app-alerts
+  namespace: afyahero
+  labels:
+    app: afyahero
+    component: monitoring
+spec:
+  groups:
+    - name: afyahero.app.alerts
+      interval: 30s
+      rules:
+        # High error rate alert
+        - alert: AfyaHeroHighAppErrorRate
+          expr: |
+            sum(rate(http_requests_total{handler="api",status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{handler="api"}[5m]))
+            > 0.05
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "High application error rate"
+            description: "Error rate is {{ $value | humanizePercentage }} for the last 2 minutes"
+        
+        # Slow response time alert
+        - alert: AfyaHeroSlowResponse
+          expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{handler="api"}[5m])) > 2
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Slow response times detected"
+            description: "95th percentile response time is {{ $value }}s"
+        
+        # Cache hit rate too low
+        - alert: AfyaHeroLowCacheHitRate
+          expr: |
+            sum(rate(cache_hits_total[5m])) 
+            / 
+            (sum(rate(cache_hits_total[5m])) + sum(rate(cache_misses_total[5m])))
+            < 0.8
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Low cache hit rate"
+            description: "Cache hit rate is {{ $value | humanizePercentage }}"
+        
+        # Queue backlog growing
+        - alert: AfyaHeroQueueBacklog
+          expr: queue_jobs_pending > 100
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Queue backlog is growing"
+            description: "{{ $value }} jobs pending in queue"
+        
+        # Circuit breaker open
+        - alert: AfyaHeroCircuitBreakerOpen
+          expr: circuit_breaker_state == 1
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Circuit breaker is open"
+            description: "Circuit breaker for {{ $labels.service }} is open"
+        
+        # Database connection pool exhausted
+        - alert: AfyaHeroDBPoolExhausted
+          expr: db_pool_connections_in_use / db_pool_connections_max > 0.9
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Database connection pool nearly exhausted"
+            description: "{{ $value | humanizePercentage }} of database connections in use"
+
+---
+# Security-specific Prometheus alerts
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: afyahero-security-alerts
+  namespace: afyahero
+  labels:
+    app: afyahero
+    component: monitoring
+    severity: critical
+spec:
+  groups:
+    - name: afyahero.security.alerts
+      interval: 30s
+      rules:
+        # High rate of failed login attempts (potential brute force)
+        - alert: AfyaHeroHighFailedLoginRate
+          expr: |
+            sum(rate(login_attempts_total{status="failed"}[5m])) > 10
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High rate of failed login attempts"
+            description: "{{ $value }} failed login attempts per second detected"
+        
+        # Unusual API access pattern (potential DDoS or scraping)
+        - alert: AfyaHeroUnusualAPIAccessPattern
+          expr: |
+            sum(rate(http_requests_total{handler="api"}[5m])) > 1000
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Unusual API access pattern detected"
+            description: "API receiving {{ $value }} requests per second"
+        
+        # High rate of 401/403 responses (potential attack)
+        - alert: AfyaHeroHighAuthFailureRate
+          expr: |
+            sum(rate(http_requests_total{status=~"401|403"}[5m])) > 50
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High rate of authentication/authorization failures"
+            description: "{{ $value }} auth failures per second detected"
+        
+        # Potential data exfiltration (high outbound data)
+        - alert: AfyaHeroHighOutboundData
+          expr: |
+            sum(rate(http_response_size_bytes_sum[5m])) > 100 * 1024 * 1024  # 100MB/s
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High outbound data transfer detected"
+            description: "Outbound data rate: {{ $value | humanize }}B/s"
+        
+        # Secrets near expiry (check if using external secrets)
+        - alert: AfyaHeroSecretsNearExpiry
+          expr: |
+            (external_secrets_secret_age_seconds / 86400) > 25  # Older than 25 days
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "External secrets may be stale"
+            description: "Secrets haven't been refreshed in {{ $value | humanize }} days"
+        
+        # Pod security context violations
+        - alert: AfyaHeroPodSecurityViolation
+          expr: |
+            kube_pod_container_status_running{namespace="afyahero"} == 1
+            and on(pod)
+            (
+              kube_pod_container_resource_limits{resource="cpu"} == 0
+              or
+              kube_pod_container_resource_limits{resource="memory"} == 0
+            )
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod running without resource limits"
+            description: "Pod {{ $labels.pod }} is running without proper resource limits"
+        
+        # Certificate expiry alert
+        - alert: AfyaHeroTLSCertExpiringSoon
+          expr: |
+            probe_ssl_earliest_cert_expiry - time() < 86400 * 30  # 30 days
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "TLS certificate expiring soon"
+            description: "Certificate expires in {{ $value | humanizeDuration }}"
+        
+        # Network policy violations (if using Calico/Cilium)
+        - alert: AfyaHeroNetworkPolicyViolations
+          expr: |
+            sum(rate(calico_policy_drop_total[5m])) > 100
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High rate of network policy violations"
+            description: "{{ $value }} packets dropped per second by network policies"
+
+---
+# Service for metrics endpoint
+apiVersion: v1
+kind: Service
+metadata:
+  name: afyahero-metrics
+  namespace: afyahero
+  labels:
+    app: afyahero
+    component: metrics
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9090"
+spec:
+  selector:
+    app: afyahero
+    component: api
+  ports:
+    - name: metrics
+      port: 9090
+      targetPort: metrics
+      protocol: TCP
+
+---
+# PodDisruptionBudget for high availability during maintenance
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: afyahero-metrics-pdb
+  namespace: afyahero
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: afyahero
+      component: api
+
+---
+# Grafana Dashboard ConfigMap for AfyaHero metrics
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: afyahero-grafana-dashboard
+  namespace: afyahero
+  labels:
+    grafana_dashboard: "1"
+    app: afyahero
+data:
+  afyahero-dashboard.json: |
+    {
+      "annotations": {
+        "list": []
+      },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "liveNow": false,
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "reqps"
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 0
+          },
+          "id": 1,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "title": "Request Rate",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "rate(http_requests_total{job=\"afyahero\"}[5m])",
+              "legendFormat": "{{ pod }}"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 0.5
+                  },
+                  {
+                    "color": "red",
+                    "value": 1
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 0
+          },
+          "id": 2,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "title": "Error Rate",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "rate(http_requests_total{job=\"afyahero\",status=~\"5..\"}[5m]) / rate(http_requests_total{job=\"afyahero\"}[5m])",
+              "legendFormat": "Error Rate"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "s"
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 8
+          },
+          "id": 3,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "title": "Response Time (95th percentile)",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"afyahero\"}[5m]))",
+              "legendFormat": "p95"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 80
+                  },
+                  {
+                    "color": "red",
+                    "value": 90
+                  }
+                ]
+              },
+              "unit": "percent"
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 8
+          },
+          "id": 4,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "title": "Cache Hit Rate",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "sum(rate(cache_hits_total[5m])) / (sum(rate(cache_hits_total[5m])) + sum(rate(cache_misses_total[5m]))) * 100",
+              "legendFormat": "Hit Rate"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 50
+                  },
+                  {
+                    "color": "red",
+                    "value": 100
+                  }
+                ]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 16
+          },
+          "id": 5,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "title": "Queue Pending Jobs",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "queue_jobs_pending",
+              "legendFormat": "Pending"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 1
+                  }
+                ]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 16
+          },
+          "id": 6,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "title": "Circuit Breaker State",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "circuit_breaker_state",
+              "legendFormat": "{{ service }}"
+            }
+          ]
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 37,
+      "style": "dark",
+      "tags": ["afyahero"],
+      "templating": {
+        "list": []
+      },
+      "time": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "",
+      "title": "AfyaHero Health System",
+      "uid": "afyahero-main",
+      "version": 1,
+      "weekStart": ""
+    }
+
+---
+# Ingress configuration with enhanced load balancing
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: afyahero-ingress-enhanced
+  namespace: afyahero
+  annotations:
+    # NGINX Ingress annotations for enhanced load balancing
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    
+    # Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "2"
+    nginx.ingress.kubernetes.io/limit-rate-after: "50"
+    
+    # Connection settings
+    nginx.ingress.kubernetes.io/upstream-hash-by: "$binary_remote_addr"
+    nginx.ingress.kubernetes.io/load-balance: "round_robin"
+    
+    # Health checks
+    nginx.ingress.kubernetes.io/healthcheck-path: "/api/health/ready"
+    nginx.ingress.kubernetes.io/healthcheck-interval: "10s"
+    nginx.ingress.kubernetes.io/healthcheck-timeout: "5s"
+    nginx.ingress.kubernetes.io/healthcheck-fall: "3"
+    nginx.ingress.kubernetes.io/healthcheck-rise: "2"
+    
+    # CORS
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,Idempotency-Key"
+    nginx.ingress.kubernetes.io/cors-expose-headers: "Content-Length,Content-Range,X-RateLimit-Limit,X-RateLimit-Remaining,X-RateLimit-Reset"
+    
+    # HSTS
+    nginx.ingress.kubernetes.io/hsts: "true"
+    nginx.ingress.kubernetes.io/hsts-include-subdomains: "true"
+    nginx.ingress.kubernetes.io/hsts-max-age: "31536000"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: api.afyahero.health
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: afyahero-service
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - api.afyahero.health
+      secretName: afyahero-tls-secret

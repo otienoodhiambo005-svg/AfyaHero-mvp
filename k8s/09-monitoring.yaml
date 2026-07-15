@@ -1,0 +1,189 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: afyahero-promtail-config
+  namespace: afyahero
+  labels:
+    app: afyahero
+    component: logging
+data:
+  promtail-config.yaml: |
+    clients:
+      - url: http://loki:3100/loki/api/v1/push
+    positions:
+      filename: /tmp/positions.yaml
+    scrape_configs:
+      - job_name: afyahero
+        static_configs:
+          - targets:
+              - localhost
+            labels:
+              job: afyahero
+              app: afyahero
+        pipeline_stages:
+          - json:
+              expressions:
+                timestamp: timestamp
+                level: level
+                message: message
+                service: service
+          - timestamp:
+              source: timestamp
+              format: "2006-01-02T15:04:05.000Z07:00"
+          - labels:
+              level:
+              service:
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: afyahero-monitor
+  namespace: afyahero
+  labels:
+    app: afyahero
+spec:
+  selector:
+    matchLabels:
+      app: afyahero
+      component: api
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
+      scrapeTimeout: 10s
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: afyahero-prometheus-rules
+  namespace: afyahero
+  labels:
+    app: afyahero
+    component: monitoring
+data:
+  prometheus-rules.yaml: |
+    groups:
+      - name: afyahero.rules
+        interval: 30s
+        rules:
+          # High CPU usage alert
+          - alert: AfyaHeroCPUHigh
+            expr: rate(container_cpu_usage_seconds_total{pod=~"afyahero-.*"}[5m]) > 0.8
+            for: 5m
+            annotations:
+              summary: "High CPU usage on AfyaHero pod"
+              description: "Pod {{ $labels.pod }} has high CPU usage"
+          
+          # High memory usage alert
+          - alert: AfyaHeroMemoryHigh
+            expr: container_memory_usage_bytes{pod=~"afyahero-.*"} / 1e9 > 1.5
+            for: 5m
+            annotations:
+              summary: "High memory usage on AfyaHero pod"
+              description: "Pod {{ $labels.pod }} has high memory usage"
+          
+          # Pod restart alert
+          - alert: AfyaHeroPodRestarts
+            expr: rate(container_last_seen{pod=~"afyahero-.*"}[15m]) * 15 * 60 > 1
+            for: 5m
+            annotations:
+              summary: "Frequent pod restarts"
+              description: "AfyaHero pod is restarting frequently"
+          
+          # Deployment replica mismatch
+          - alert: AfyaHeroReplicaMismatch
+            expr: |
+              kube_deployment_spec_replicas{deployment="afyahero"} 
+              != 
+              kube_deployment_status_replicas_available{deployment="afyahero"}
+            for: 5m
+            annotations:
+              summary: "Replica mismatch for AfyaHero"
+              description: "Expected and actual replicas do not match"
+          
+          # High request latency
+          - alert: AfyaHeroHighLatency
+            expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{handler="api"}[5m])) > 1
+            for: 5m
+            annotations:
+              summary: "High request latency detected"
+              description: "95th percentile latency is {{ $value }}s"
+          
+          # High error rate
+          - alert: AfyaHeroHighErrorRate
+            expr: |
+              sum(rate(http_requests_total{handler="api",status=~"5.."}[5m]))
+              /
+              sum(rate(http_requests_total{handler="api"}[5m]))
+              > 0.05
+            for: 5m
+            annotations:
+              summary: "High error rate detected"
+              description: "Error rate is {{ $value | humanizePercentage }}"
+
+---
+# Prometheus configuration for scraping metrics
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: afyahero
+  labels:
+    app: prometheus
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 30s
+      evaluation_interval: 30s
+      external_labels:
+        cluster: 'afyahero-prod'
+        environment: 'production'
+    
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets:
+                - alertmanager:9093
+    
+    rule_files:
+      - '/etc/prometheus/rules/prometheus-rules.yaml'
+    
+    scrape_configs:
+      - job_name: 'kubernetes-apiservers'
+        kubernetes_sd_configs:
+          - role: endpoints
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: default;kubernetes;https
+      
+      - job_name: 'kubernetes-nodes'
+        kubernetes_sd_configs:
+          - role: node
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: 'true'
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
