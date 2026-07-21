@@ -228,6 +228,10 @@ model Patient {
   medicationReminders  MedicationReminder[]
   medicationAdherence  MedicationAdherence[]
 
+  @@index([hospitalId])
+  @@index([shifNumber])
+  @@index([createdAt])
+  @@index([hospitalId, createdAt])
   @@map("patients")
 }
 
@@ -250,6 +254,11 @@ model Appointment {
   hospital             Hospital @relation(fields: [hospitalId], references: [id])
   patient              Patient @relation(fields: [patientId], references: [id])
 
+  @@index([hospitalId])
+  @@index([patientId])
+  @@index([appointmentDate])
+  @@index([hospitalId, appointmentDate])
+  @@index([status, appointmentDate])
   @@map("appointments")
 }
 

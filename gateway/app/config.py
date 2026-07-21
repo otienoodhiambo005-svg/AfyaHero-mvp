@@ -23,26 +23,36 @@ Required env vars:
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True, extra="ignore")
 
-    # ── App ──────────────────────────────────────────────────────────────
+    # [4m App [0m [4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m
     ENVIRONMENT: str = "development"  # development | staging | production
     SECRET_KEY: str = ""
     DEBUG: bool = False
     CORS_ALLOWED_ORIGINS: str = ""
 
-    # ── Supabase (REQUIRED) ────────────────────────────────────────────────
+    # [4m Supabase (REQUIRED) [0m [4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m
     SUPABASE_URL: str = ""
     SUPABASE_ANON_KEY: str = ""
     SUPABASE_SERVICE_ROLE_KEY: str = ""
 
-    # ── Database (Supabase connection pool) ───────────────────────────────
+    # [4m Database (Supabase connection pool) [0m [4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m
     DATABASE_URL: str = ""
     DATABASE_URL_SYNC: str = ""
 
-    # ── Redis (Optional - Supabase Realtime can replace) ────────────────────────
+    # [4m Redis (Optional - Supabase Realtime can replace) [0m [4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m
     # Set REDIS_URL to enable, otherwise uses in-memory fallback
     REDIS_URL: str | None = None
 
-    # ── AI ────────────────────────────────────────────────────────────────
+    # [4m AI Cache Configuration [0m [4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m
+    AI_CACHE_TTL: int = 300  # 5 minutes default
+    AI_CACHE_ENABLED: bool = True
+    AI_CACHE_MAX_SIZE: int = 10000  # Max cache entries per hospital
+
+    # [4m AI Circuit Breaker Configuration [0m [4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m
+    AI_CIRCUIT_BREAKER_ENABLED: bool = True
+    AI_CIRCUIT_BREAKER_FAIL_MAX: int = 3
+    AI_CIRCUIT_BREAKER_RESET_TIMEOUT: int = 60  # seconds
+
+    # [4m AI [0m [4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m
     VERTEX_AI_PROJECT: str | None = None
     VERTEX_AI_LOCATION: str = "us-central1"
     GCP_PROJECT_ID: str | None = None
@@ -54,12 +64,12 @@ class Settings(BaseSettings):
     # Priority: Free tier - OpenRouter with free credits
     OPENROUTER_API_KEY: str | None = None
 
-    # ── Africa's Talking ──────────────────────────────────────────────────
+    # [4m Africa's Talking [0m [4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m
     AT_USERNAME: str | None = None
     AT_API_KEY: str | None = None
     AT_SENDER_ID: str = "AfyaHero"
 
-    # ── M-Pesa Daraja ─────────────────────────────────────────────────────
+    # [4m M-Pesa Daraja [0m [4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m
     MPESA_CONSUMER_KEY: str | None = None
     MPESA_CONSUMER_SECRET: str | None = None
     MPESA_SHORTCODE: str | None = None
@@ -68,16 +78,16 @@ class Settings(BaseSettings):
     MPESA_B2C_INITIATOR: str | None = None
     MPESA_B2C_SECURITY_CREDENTIAL: str | None = None
 
-    # ── SHA ────────────────────────────────────────────────────────────────
+    # [4m SHA [0m [4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m
     SHA_BASE_URL: str | None = None
     SHA_CLIENT_ID: str | None = None
     SHA_CLIENT_SECRET: str | None = None
     SHA_FACILITY_CODE: str | None = None
 
-    # ── Push Notifications ────────────────────────────────────────────────
+    # [4m Push Notifications [0m [4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m
     FCM_SERVER_KEY: str | None = None
 
-    # ── Auth ─────────────────────────────────────────────────────────────
+    # [4m Auth [0m [4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m
     JWT_ACCESS_EXPIRE_MINUTES: int = 30
     JWT_REFRESH_EXPIRE_DAYS: int = 7
     JWT_ALGORITHM: str = "HS256"
@@ -85,10 +95,10 @@ class Settings(BaseSettings):
     MAX_LOGIN_ATTEMPTS: int = 5
     LOCKOUT_MINUTES: int = 30
 
-    # ── Encryption ────────────────────────────────────────────────────────
+    # [4m Encryption [0m [4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m
     PII_ENCRYPTION_KEY: str | None = None
 
-    # ── Deployment ────────────────────────────────────────────────────────
+    # [4m Deployment [0m [4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m[4m[0m
     DEPLOYMENT_MODE: str = "saas"  # saas | onpremise
     HOSPITAL_ID_OVERRIDE: str | None = None
 
