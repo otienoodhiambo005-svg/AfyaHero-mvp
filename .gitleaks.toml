@@ -1,0 +1,57 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlist"
+paths = [
+    '''(?i)(test|spec|mock|example|sample|fixture).*\.(js|ts|json|yaml|yml)$''',
+    '''.*\.min\.(js|css)$''',
+    '''.*\.d\.ts$''',
+    '''.*\.map$''',
+    '''node_modules/.*''',
+    '''dist/.*''',
+    '''build/.*''',
+    '''coverage/.*''',
+    '''.*\.lock$''',
+]
+
+[[rules]]
+description = "AfyaHero Custom Rules"
+regexes = [
+    # Database URLs
+    '''(?i)(postgres|postgresql|mysql|mongodb|redis)://[^\s]+''',
+    
+    # API Keys
+    '''(?i)(api[_-]?key|apikey|api[_-]?secret)['"]?\s*[:=]\s*['"]([a-zA-Z0-9_\-]{20,})['"]''',
+    
+    # Secret Keys
+    '''(?i)(secret|password|passwd|pwd)['"]?\s*[:=]\s*['"]([^\s'"]{8,})['"]''',
+    
+    # JWT Secrets
+    '''(?i)(jwt[_-]?secret|secret[_-]?key)['"]?\s*[:=]\s*['"]([^\s'"]{32,})['"]''',
+    
+    # Supabase Keys
+    '''(?i)(supabase[_-]?url|supabase[_-]?key|service[_-]?role[_-]?key)['"]?\s*[:=]\s*['"]([^\s'"]+)['"]''',
+    
+    # Google API Keys
+    '''(?i)(google[_-]?api[_-]?key|gcp[_-]?key|vertex[_-]?ai[_-]?key)['"]?\s*[:=]\s*['"]([^\s'"]+)['"]''',
+    
+    # OpenAI Keys
+    '''(?i)(openai[_-]?api[_-]?key|anthropic[_-]?api[_-]?key|groq[_-]?api[_-]?key)['"]?\s*[:=]\s*['"]([^\s'"]+)['"]''',
+    
+    # Private Keys
+    '''(?i)-----BEGIN (RSA|EC|DSA|OPENSSH) PRIVATE KEY-----''',
+    
+    # Bearer Tokens
+    '''(?i)bearer\s+[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+''',
+    
+    # Basic Auth
+    '''(?i)basic\s+[a-zA-Z0-9+/=]+''',
+]
+
+tags = ["afyahero", "secrets"]
+
+[[rules]]
+description = "High Entropy Strings"
+entropy = 4.5
+threshold = 15
