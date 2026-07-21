@@ -1,0 +1,79 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: gateway-pdb
+  namespace: afyahero
+  labels:
+    app: afyahero
+    component: gateway
+spec:
+  minAvailable: 1
+  maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: afyahero
+      component: gateway
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: web-pdb
+  namespace: afyahero
+  labels:
+    app: afyahero
+    component: web
+spec:
+  minAvailable: 2
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: afyahero
+      component: web
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ai-services-pdb
+  namespace: afyahero
+  labels:
+    app: afyahero
+    component: ai-service
+spec:
+  minAvailable: 1
+  maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: afyahero
+      component: ai-service
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: database-pdb
+  namespace: afyahero
+  labels:
+    app: afyahero
+    component: database
+spec:
+  minAvailable: 1
+  maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: afyahero
+      component: database
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: redis-pdb
+  namespace: afyahero
+  labels:
+    app: afyahero
+    component: redis
+spec:
+  minAvailable: 1
+  maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: afyahero
+      component: redis

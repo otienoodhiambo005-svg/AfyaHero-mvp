@@ -8,7 +8,13 @@ import logging
 from app.config import get_settings
 from app.core.tenancy.resolver import TenantMiddleware
 from app.core.audit.middleware import AuditMiddleware
-from app.db import init_supabase, init_async_engine, init_redis
+from app.db import init_supabase, init_async_engine, init_redis, close_connections
+from app.observability import setup_tracing, setup_metrics, setup_logging
+from app.observability.metrics import (
+    API_REQUESTS,
+    API_ERRORS,
+    API_RESPONSE_TIME,
+)
 
 settings = get_settings()
 logger = logging.getLogger("afyahero")
@@ -17,6 +23,11 @@ logger = logging.getLogger("afyahero")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan events"""
+    # Initialize observability first
+    setup_logging()
+    setup_tracing()
+    setup_metrics(9090)
+    
     logger.info(f"AfyaHero Hospital OS starting [{settings.ENVIRONMENT}]")
 
     # Initialize core services
@@ -26,6 +37,15 @@ async def lifespan(app: FastAPI):
 
     logger.info("All services initialized successfully")
     yield
+    
+    # Shutdown observability
+    from app.observability import shutdown_tracing, shutdown_metrics
+    shutdown_metrics()
+    shutdown_tracing()
+    
+    # Close database connections
+    await close_connections()
+    
     logger.info("Shutdown complete")
 
 
@@ -82,6 +102,14 @@ def create_app() -> FastAPI:
     # 5. Automatic audit logging for patient access
     app.add_middleware(AuditMiddleware)
 
+    # 6. Request ID middleware for tracing
+    from app.core.middleware.request_id import RequestIdMiddleware
+    app.add_middleware(RequestIdMiddleware)
+
+    # 7. Metrics middleware
+    from app.core.middleware.metrics import MetricsMiddleware
+    app.add_middleware(MetricsMiddleware)
+
     # Include API v1 routes
     from app.api.v1.router import v1_router
 
@@ -102,7 +130,7 @@ def create_app() -> FastAPI:
         orchestrator = AIOrchestrator()
 
         providers_status = {}
-        for name, provider in orchestrator.providers.items():
+        for name, provider in orchestrator.medic.providers.items():
             try:
                 is_healthy = await provider.health_check()
                 providers_status[name] = {
@@ -114,10 +142,76 @@ def create_app() -> FastAPI:
 
         return {"status": "ok", "providers": providers_status}
 
+    @app.get("/health/deep", include_in_schema=False)
+    async def deep_health_check():
+        """Deep health check with database and Redis connectivity"""
+        from app.db import get_async_session, get_redis
+        from sqlalchemy import text
+        
+        health = {
+            "status": "ok",
+            "database": "unknown",
+            "redis": "unknown",
+            "ai_providers": "unknown",
+        }
+        
+        # Check database
+        try:
+            async with get_async_session() as session:
+                await session.execute(text("SELECT 1"))
+            health["database"] = "healthy"
+        except Exception as e:
+            health["database"] = f"unhealthy: {str(e)}"
+        
+        # Check Redis
+        try:
+            redis = get_redis()
+            if redis:
+                await redis.ping()
+                health["redis"] = "healthy"
+            else:
+                health["redis"] = "not configured"
+        except Exception as e:
+            health["redis"] = f"unhealthy: {str(e)}"
+        
+        # Check AI providers
+        try:
+            orchestrator = AIOrchestrator()
+            for name, provider in orchestrator.medic.providers.items():
+                try:
+                    is_healthy = await provider.health_check()
+                    if not is_healthy:
+                        health["ai_providers"] = "degraded"
+                        break
+                except:
+                    health["ai_providers"] = "degraded"
+                    break
+            else:
+                health["ai_providers"] = "healthy"
+        except Exception as e:
+            health["ai_providers"] = f"error: {str(e)}"
+        
+        return health
+
+    @app.get("/metrics", include_in_schema=False)
+    async def metrics_endpoint():
+        """Prometheus metrics endpoint"""
+        from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+        return generate_latest(), 200, {"Content-Type": CONTENT_TYPE_LATEST}
+
     # Global error handler - never expose stack traces
     @app.exception_handler(Exception)
     async def global_error_handler(request: Request, exc: Exception):
         logger.error(f"Unhandled exception: {exc}", exc_info=True)
+        
+        # Record error metric
+        API_ERRORS.labels(
+            method=request.method,
+            endpoint=request.url.path,
+            error_type=type(exc).__name__,
+            hospital_id=getattr(request.state, 'hospital_id', 'unknown')
+        ).inc()
+        
         return JSONResponse(status_code=500, content={"error": "internal_server_error"})
 
     return app
