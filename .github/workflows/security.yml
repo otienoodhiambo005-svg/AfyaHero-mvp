@@ -1,0 +1,134 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * *'  # Daily scan
+  workflow_dispatch:
+
+jobs:
+  container-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build gateway image
+        run: docker build -t afyahero-gateway:scan ./gateway
+
+      - name: Scan for vulnerabilities with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'afyahero-gateway:scan'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+
+      - name: Upload results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+        if: always()
+
+  dependency-scan:
+    name: Dependency Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          cd gateway
+          pip install safety pip-audit
+
+      - name: Scan Python dependencies
+        run: |
+          cd gateway
+          pip-audit --format json --output pip-audit-results.json
+          safety check --json --output safety-results.json
+        continue-on-error: true
+
+      - name: Upload Python scan results
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-security-scan
+          path: |
+            gateway/pip-audit-results.json
+            gateway/safety-results.json
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install frontend dependencies
+        run: |
+          cd pulse-core-nextjs
+          npm ci
+
+      - name: Scan Node.js dependencies
+        run: |
+          cd pulse-core-nextjs
+          npm audit --audit-level=moderate --json > npm-audit-results.json
+        continue-on-error: true
+
+      - name: Upload Node.js scan results
+        uses: actions/upload-artifact@v4
+        with:
+          name: nodejs-security-scan
+          path: pulse-core-nextjs/npm-audit-results.json
+
+  secret-scan:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan for secrets with Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
+
+  code-quality:
+    name: Code Quality Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install code quality tools
+        run: |
+          pip install bandit flake8 pylint
+
+      - name: Run Bandit (security linter)
+        run: |
+          cd gateway
+          bandit -r app/ -f json -o bandit-results.json
+        continue-on-error: true
+
+      - name: Run Flake8 (style linter)
+        run: |
+          cd gateway
+          flake8 app/ --max-line-length=120 --extend-ignore=E203 --format=json --output-file=flake8-results.json
+        continue-on-error: true
+
+      - name: Upload code quality results
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-quality-scan
+          path: |
+            gateway/bandit-results.json
+            gateway/flake8-results.json
